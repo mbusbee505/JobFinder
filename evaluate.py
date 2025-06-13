@@ -26,7 +26,7 @@ exclusions = config["search_parameters"]["exclusion_keywords"]
 default_resume = config["resume"]["text"]
 
 #_OPENAI_MODEL = "gpt-4.1-mini"  # OpenAI model identifier
-_OPENAI_MODEL = "gpt-4o"  # OpenAI model identifier
+_OPENAI_MODEL = "o3"  # OpenAI model identifier
 _GEMINI_MODEL = "models/gemini-2.5-flash-preview-04-17"
 
 _FENCE_RE = re.compile(r"^```(?:json)?\n|\n```$", re.S)
