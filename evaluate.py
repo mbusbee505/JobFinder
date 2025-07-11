@@ -88,7 +88,7 @@ def prompt_eligibility(job_description: str, resume: Optional[str] = None) -> st
     )
     return base
 
-def call_openai(prompt: str, temperature: float = 0) -> Dict[str, Any]:
+def call_openai(prompt: str, temperature: float = 1) -> Dict[str, Any]:
     # Ensure the prompt is ASCII-only
     sanitized_prompt = sanitize_text(prompt)
     
