@@ -99,7 +99,7 @@ def call_openai(prompt: str) -> Dict[str, Any]:
     )
     return json.loads(response.choices[0].message.content)
 
-def call_gemini(prompt: str, temperature: float = 0) -> dict:
+def call_gemini(prompt: str) -> dict:
     current_config = load() # Load config, potentially cached
     google_api_key = current_config.get("api_keys", {}).get("google_api_key")
 
@@ -117,7 +117,6 @@ def call_gemini(prompt: str, temperature: float = 0) -> dict:
     model = genai.GenerativeModel(_GEMINI_MODEL)
     resp = model.generate_content(
         prompt,
-        generation_config={"temperature": temperature},
     )
     txt = _FENCE_RE.sub("", resp.text.strip())
     return json.loads(txt)
@@ -126,7 +125,6 @@ def call_gemini(prompt: str, temperature: float = 0) -> dict:
 def analyze_job(
     job_description: str,
     resume: Optional[str] = default_resume,
-    temperature: float = 0,
 ) -> Dict[str, Any]:
 
     prompt = prompt_eligibility(job_description, resume)
@@ -151,7 +149,7 @@ def analyze_job(
         # raise ValueError("provider must be 'openai' or 'gemini'") # MODIFIED error message
         raise ValueError(f"Invalid AI provider configured: '{provider_to_use}'. Must be 'openai' or 'gemini'.") # MODIFIED
 
-    return call(prompt, temperature)
+    return call(prompt)
 
 
 def batch_analyse_jobs(
