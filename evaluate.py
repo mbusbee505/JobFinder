@@ -134,7 +134,7 @@ def analyze_job(
 
     # Load the latest configuration to determine the AI provider
     current_config = load() # ADDED to load fresh config
-    provider_to_use = current_config.get("general", {}).get("ai_provider", "gemini").lower() # ADDED
+    provider_to_use = current_config.get("general", {}).get("ai_provider", "openai").lower() # ADDED
 
     call: Callable[[str, float], Dict[str, Any]]
     if provider_to_use == "openai": # MODIFIED
