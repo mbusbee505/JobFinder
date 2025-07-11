@@ -88,14 +88,13 @@ def prompt_eligibility(job_description: str, resume: Optional[str] = None) -> st
     )
     return base
 
-def call_openai(prompt: str, temperature: float = 1) -> Dict[str, Any]:
+def call_openai(prompt: str) -> Dict[str, Any]:
     # Ensure the prompt is ASCII-only
     sanitized_prompt = sanitize_text(prompt)
     
     response = openai.chat.completions.create(
         model=_OPENAI_MODEL,
         messages=[{"role": "user", "content": sanitized_prompt}],
-        temperature=temperature,
         response_format={"type": "json_object"},
     )
     return json.loads(response.choices[0].message.content)
