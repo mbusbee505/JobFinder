@@ -1,9 +1,20 @@
 requests
 beautifulsoup4
-psycopg2-binary
 python-dotenv
 tomli
-openai
+openai>=1.0.0
 google-generativeai
 streamlit
 toml
+# FastAPI dependencies for new frontend
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+websockets
+pandas
+# Resume generation dependencies
+python-docx
+# PDF processing libraries
+PyPDF2
+pdfplumber

@@ -43,15 +43,25 @@ def shuffled(seq: Sequence[T]) -> List[T]:
     random.shuffle(tmp)
     return tmp
 
-def process_search_page(search) -> int:
+def process_search_page(search, stop_signal=None) -> int:
     handled = 0
     jobs_for_update = []
 
+    # Check for stop signal before starting
+    if stop_signal and stop_signal[0]:
+        return 0
+        
     soup = get_soup(search["url"])
     if soup is None:
         return 0
 
     for a in soup.find_all("a", href=True):
+        # Check for stop signal periodically
+        if stop_signal and stop_signal[0]:
+            print(f"  Stop signal detected during link processing. Handled {handled} links so far.")
+            sys.stdout.flush()
+            break
+            
         if "/jobs/view/" not in a["href"]:
             continue
         handled += 1
@@ -66,11 +76,42 @@ def process_search_page(search) -> int:
         if is_new or database.row_missing_details(job_id):
             jobs_for_update.append({"job_id": job_id, "url": url})
 
-    if jobs_for_update:
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-            list(pool.map(_fetch_and_update, jobs_for_update))
+    # Process jobs with stop signal monitoring
+    if jobs_for_update and not (stop_signal and stop_signal[0]):
+        # Use a custom function that can check stop signals
+        _process_jobs_with_stop_check(jobs_for_update, stop_signal)
 
     return handled
+
+def _process_jobs_with_stop_check(jobs_for_update, stop_signal=None):
+    """Process jobs with periodic stop signal checking"""
+    processed = 0
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        # Submit jobs in smaller batches to allow stop checking
+        batch_size = min(5, len(jobs_for_update))
+        for i in range(0, len(jobs_for_update), batch_size):
+            # Check stop signal before each batch
+            if stop_signal and stop_signal[0]:
+                print(f"  Stop signal detected. Processed {processed}/{len(jobs_for_update)} jobs.")
+                sys.stdout.flush()
+                break
+                
+            batch = jobs_for_update[i:i + batch_size]
+            # Add stop_signal to each job for checking
+            batch_with_signal = [{"stop_signal": stop_signal, **job} for job in batch]
+            
+            futures = [pool.submit(_fetch_and_update_with_stop, job_data) for job_data in batch_with_signal]
+            
+            # Wait for batch completion with stop checking
+            for future in futures:
+                if stop_signal and stop_signal[0]:
+                    break
+                try:
+                    future.result(timeout=30)  # 30 second timeout per job
+                    processed += 1
+                except Exception as e:
+                    print(f"  Error processing job: {e}")
+                    processed += 1
 
 def get_searches():
     searches = []
@@ -296,7 +337,17 @@ def get_job_data(job):
     
     return job_data
 
-def _fetch_and_update(job: dict) -> None:
+def _fetch_and_update_with_stop(job_data: dict) -> None:
+    """Wrapper for _fetch_and_update that checks stop signals"""
+    stop_signal = job_data.get("stop_signal")
+    if stop_signal and stop_signal[0]:
+        return
+    
+    # Remove stop_signal from job data before processing
+    job = {k: v for k, v in job_data.items() if k != "stop_signal"}
+    _fetch_and_update(job, stop_signal)
+
+def _fetch_and_update(job: dict, stop_signal=None) -> None:
     # For timing, uncomment if desired
     # start_time_total = time.time()
 
@@ -310,6 +361,10 @@ def _fetch_and_update(job: dict) -> None:
         title = extract_job_title(soup)
         desc  = extract_job_description(soup)
 
+    # Check stop signal before exclusion check
+    if stop_signal and stop_signal[0]:
+        return
+        
     # ADDED BLOCK: Check exclusions against the full title
     if title and evaluate.contains_exclusions(title):
         # sys.stdout.write(f"INFO: Job ID {linkedin_job_id} ('{title}') excluded based on full title.\\n") # Optional logging
@@ -317,6 +372,10 @@ def _fetch_and_update(job: dict) -> None:
         database.mark_job_as_analyzed(job_id=linkedin_job_id) # Mark as analyzed to prevent re-processing
         return # Skip further processing for this job
 
+    # Check stop signal before guest fetch
+    if stop_signal and stop_signal[0]:
+        return
+        
     if title is None or desc is None:
         g_title, g_desc = _fetch_guest(linkedin_job_id)
         if title is None:
@@ -329,9 +388,17 @@ def _fetch_and_update(job: dict) -> None:
         database.mark_job_as_analyzed(job_id=linkedin_job_id)
         return
 
+    # Check stop signal before database update
+    if stop_signal and stop_signal[0]:
+        return
+        
     if title is not None or desc is not None:
         database.update_details(linkedin_job_id, title, desc)
 
+    # Check stop signal before expensive AI analysis
+    if stop_signal and stop_signal[0]:
+        return
+        
     if desc and desc.strip():
         try:
             # For timing, uncomment if desired
@@ -456,7 +523,7 @@ def scrape_phase(stop_signal: List[bool]) -> tuple[int, int]:
                 database.set_stop_scan_flag(False) # Reset the flag after acknowledging stop
                 break
 
-            links_on_page = process_search_page(search) or 0 # process_search_page is in scrape.py
+            links_on_page = process_search_page(search, stop_signal) or 0 # process_search_page is in scrape.py
             total_links_examined_this_run += links_on_page
             show_progress(i, total_searches)
     except KeyboardInterrupt:

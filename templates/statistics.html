@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - JobFinder{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js for data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">📊 Job Application Statistics</h1>
+</div>
+
+<div class="mb-4">
+    <p class="text-muted">Insights into your job discovery and approval process.</p>
+</div>
+
+<!-- Overall Job Funnel Metrics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h3 class="mb-3">🚀 Overall Job Funnel</h3>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-metric">
+            <h3>{{ metrics.total_discovered }}</h3>
+            <p>Discovered Jobs</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-metric">
+            <h3>{{ metrics.total_analyzed }}</h3>
+            <p>Jobs Analyzed</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-metric">
+            <h3>{{ metrics.total_approved }}</h3>
+            <p>Jobs Approved</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-metric">
+            <h3>{{ metrics.total_applied }}</h3>
+            <p>Jobs Applied</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row">
+    <!-- Approved Jobs by Keyword -->
+    <div class="col-md-6 mb-4">
+        <div class="chart-container" style="height: 400px;">
+            <h4 class="mb-3">🔑 Approved Jobs by Keyword</h4>
+            {% if keyword_data %}
+                <div style="position: relative; height: 320px;">
+                    <canvas id="keywordChart"></canvas>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-bar-chart" style="font-size: 3rem;"></i>
+                    <p class="mt-3">No approved jobs with keyword data found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Approved Jobs by Location -->
+    <div class="col-md-6 mb-4">
+        <div class="chart-container" style="height: 400px;">
+            <h4 class="mb-3">📍 Approved Jobs by Location</h4>
+            {% if location_data %}
+                <div style="position: relative; height: 320px;">
+                    <canvas id="locationChart"></canvas>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-geo-alt" style="font-size: 3rem;"></i>
+                    <p class="mt-3">No approved jobs with location data found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Job Funnel Visualization -->
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="chart-container" style="height: 450px;">
+            <h4 class="mb-3">📈 Job Application Funnel</h4>
+            <div style="position: relative; height: 380px;">
+                <canvas id="funnelChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables -->
+{% if keyword_data %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h4 class="mb-3">🔑 Keyword Breakdown</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th class="text-end">Jobs Approved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in keyword_data[:10] %}
+                        <tr>
+                            <td>{{ item.keyword }}</td>
+                            <td class="text-end">{{ item.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% if location_data %}
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h4 class="mb-3">📍 Location Breakdown</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th class="text-end">Jobs Approved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in location_data[:10] %}
+                        <tr>
+                            <td>{{ item.location }}</td>
+                            <td class="text-end">{{ item.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- No Data Message -->
+{% if not keyword_data and not location_data and metrics.total_discovered == 0 %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-warning" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">No Data Available</h5>
+                    <p class="mb-0">No job data found in the database. Start a scan or approve some jobs to see statistics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Chart.js configuration
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#6b7280';
+
+// Color schemes
+const colorScheme = [
+    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+    '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6366f1'
+];
+
+// Keyword Chart
+{% if keyword_data %}
+const keywordDataVar = {{ keyword_data | safe }};
+const keywordCtx = document.getElementById('keywordChart').getContext('2d');
+new Chart(keywordCtx, {
+    type: 'bar',
+    data: {
+        labels: keywordDataVar.map(item => item.keyword),
+        datasets: [{
+            label: 'Approved Jobs',
+            data: keywordDataVar.map(item => item.count),
+            backgroundColor: colorScheme.slice(0, keywordDataVar.length),
+            borderColor: colorScheme.slice(0, keywordDataVar.length),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.5,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            },
+            x: {
+                ticks: {
+                    maxRotation: 45
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+// Location Chart
+{% if location_data %}
+const locationDataVar = {{ location_data | safe }};
+const locationCtx = document.getElementById('locationChart').getContext('2d');
+new Chart(locationCtx, {
+    type: 'doughnut',
+    data: {
+        labels: locationDataVar.map(item => item.location),
+        datasets: [{
+            data: locationDataVar.map(item => item.count),
+            backgroundColor: colorScheme.slice(0, locationDataVar.length),
+            borderColor: '#ffffff',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+// Funnel Chart
+const metricsVar = {{ metrics | safe }};
+const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+new Chart(funnelCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Discovered', 'Analyzed', 'Approved', 'Applied'],
+        datasets: [{
+            label: 'Number of Jobs',
+            data: [
+                metricsVar.total_discovered,
+                metricsVar.total_analyzed, 
+                metricsVar.total_approved,
+                metricsVar.total_applied
+            ],
+            backgroundColor: [
+                '#3b82f6',
+                '#10b981', 
+                '#f59e0b',
+                '#ef4444'
+            ],
+            borderColor: [
+                '#2563eb',
+                '#059669',
+                '#d97706', 
+                '#dc2626'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: {
+                display: false
+            },
+            title: {
+                display: true,
+                text: 'Job Application Pipeline'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Calculate and display conversion rates
+document.addEventListener('DOMContentLoaded', function() {
+    const total = metricsVar.total_discovered;
+    if (total > 0) {
+        const analyzedRate = ((metricsVar.total_analyzed / total) * 100).toFixed(1);
+        const approvedRate = ((metricsVar.total_approved / total) * 100).toFixed(1);
+        const appliedRate = ((metricsVar.total_applied / total) * 100).toFixed(1);
+        
+        console.log('Conversion Rates:');
+        console.log('- Analyzed: ' + analyzedRate + '%');
+        console.log('- Approved: ' + approvedRate + '%');
+        console.log('- Applied: ' + appliedRate + '%');
+    }
+});
+</script>
+{% endblock %} 

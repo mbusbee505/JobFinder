@@ -35,9 +35,11 @@ Do NOT reject the job solely for:
 - Requiring specific tools experience
 - Listing certifications as requirements (unless explicitly marked as "must have before starting")"""
     },
-    "api_keys": { # New section for API keys
-        "google_api_key": "YOUR_GOOGLE_API_KEY_HERE",
+    "api_keys": { # API keys section
         "openai_api_key": "YOUR_OPENAI_API_KEY_HERE"
+    },
+    "general": { # General settings
+        "ai_provider": "openai"
     }
 }
 

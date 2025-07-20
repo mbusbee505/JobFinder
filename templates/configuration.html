@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - JobFinder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">⚙️ JobFinder - Configuration</h1>
+</div>
+
+<form id="config-form" method="post" action="/api/save-config">
+    <!-- API Keys Section -->
+    <div class="config-section">
+        <h3>🔑 OpenAI API Configuration</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label for="openai_api_key" class="form-label">OpenAI API Key</label>
+                    <input type="password" class="form-control" id="openai_api_key" name="openai_api_key" 
+                           value="{{ config['api_keys']['openai_api_key'] if config['api_keys']['openai_api_key'] != 'YOUR_OPENAI_API_KEY_HERE' else '' }}">
+                    <div class="form-text">
+                        <a href="https://platform.openai.com/api-keys" target="_blank">Get your OpenAI API key</a> | 
+                        Uses OpenAI o3 models for job evaluation
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Hidden field to set AI provider to OpenAI -->
+        <input type="hidden" name="ai_provider" value="openai">
+    </div>
+
+    <!-- Personal Information Section -->
+    <div class="config-section">
+        <h3>👤 Personal Information</h3>
+        <p class="text-muted mb-3">This information will be used for generating personalized resumes.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                           value="{{ config['personal_info']['first_name'] if config['personal_info']['first_name'] != 'Your First Name' else '' }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="last_name" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                           value="{{ config['personal_info']['last_name'] if config['personal_info']['last_name'] != 'Your Last Name' else '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="phone_number" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                           value="{{ config['personal_info']['phone_number'] if config['personal_info']['phone_number'] != '(555) 123-4567' else '' }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="email_address" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email_address" name="email_address" 
+                           value="{{ config['personal_info']['email_address'] if config['personal_info']['email_address'] != 'your.email@example.com' else '' }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="linkedin_url" class="form-label">LinkedIn URL</label>
+                    <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" 
+                           value="{{ config['personal_info']['linkedin_url'] if config['personal_info']['linkedin_url'] != 'https://linkedin.com/in/yourprofile' else '' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Parameters Section -->
+    <div class="config-section">
+        <h3>📝 Search Parameters</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="locations" class="form-label">📍 Locations</label>
+                    <textarea class="form-control" id="locations" name="locations" rows="6" 
+                              placeholder="Enter one location per line">{{ config['search_parameters']['locations'] | join('\n') }}</textarea>
+                    <div class="form-text">One location per line (e.g., "remote", "New York, NY")</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="keywords" class="form-label">🔑 Keywords</label>
+                    <textarea class="form-control" id="keywords" name="keywords" rows="6" 
+                              placeholder="Enter one keyword per line">{{ config['search_parameters']['keywords'] | join('\n') }}</textarea>
+                    <div class="form-text">One keyword per line (e.g., "Python", "JavaScript")</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="exclusions" class="form-label">🚫 Exclusion Keywords</label>
+                    <textarea class="form-control" id="exclusions" name="exclusions" rows="6" 
+                              placeholder="Enter one exclusion per line">{{ config['search_parameters']['exclusion_keywords'] | join('\n') }}</textarea>
+                    <div class="form-text">One exclusion per line (e.g., "Senior", "Manager")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Evaluation Settings Section -->
+    <div class="config-section">
+        <h3>✨ AI Evaluation Settings</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="resume_text" class="form-label">📄 Resume</label>
+                    
+                    <!-- File Upload Option -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="resume_file" name="resume_file" 
+                                   accept=".pdf,.docx,.doc,.txt" onchange="handleResumeUpload(this)">
+                            <button class="btn btn-outline-secondary" type="button" onclick="clearResumeFile()">Clear</button>
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-upload me-1"></i>
+                            Upload your resume (PDF, DOCX, DOC, or TXT files supported)
+                        </div>
+                    </div>
+                    
+                    <!-- Text Area Option -->
+                    <div class="mb-3">
+                        <label for="resume_text" class="form-label">Or paste resume text:</label>
+                        <textarea class="form-control" id="resume_text" name="resume_text" rows="15" 
+                                  placeholder="Paste your resume text here...">{{ config['resume']['text'] }}</textarea>
+                        <div class="form-text">Your resume will be used by AI to evaluate job matches</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="ai_prompt" class="form-label">🤖 AI Evaluation Prompt</label>
+                    <textarea class="form-control" id="ai_prompt" name="ai_prompt" rows="15" 
+                              placeholder="Enter AI evaluation criteria...">{{ config['prompts']['evaluation_prompt'] }}</textarea>
+                    <div class="form-text">Instructions for AI on how to evaluate jobs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="text-center mb-4">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-save me-2"></i>
+            Save All Settings
+        </button>
+    </div>
+</form>
+
+<!-- Configuration Actions -->
+<div class="config-section">
+    <h3>📋 Configuration Actions</h3>
+    <div class="row">
+        <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 mb-2" onclick="exportConfig()">
+                <i class="bi bi-download me-2"></i>
+                Export Configuration
+            </button>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100 mb-2" onclick="showConfigUploader()">
+                <i class="bi bi-upload me-2"></i>
+                Import Configuration
+            </button>
+            <input type="file" id="config-file-input" accept=".toml" style="display: none;" onchange="importConfig()">
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-outline-secondary w-100 mb-2" onclick="reloadConfig()">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Reload from File
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="d-none position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="z-index: 9999;">
+    <div class="text-center text-white">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div id="loading-message">Processing...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('config-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    submitForm('config-form', '/api/save-config', 'Configuration saved successfully!');
+});
+
+function exportConfig() {
+    fetch('/api/export-config')
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'jobfinder_config.toml';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        showNotification('success', 'Configuration exported successfully!');
+    })
+    .catch(error => {
+        showNotification('error', 'Error exporting configuration: ' + error.message);
+    });
+}
+
+function showConfigUploader() {
+    document.getElementById('config-file-input').click();
+}
+
+function importConfig() {
+    const fileInput = document.getElementById('config-file-input');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('config_file', file);
+    
+    showLoading('Importing configuration...');
+    
+    fetch('/api/import-config', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showNotification('success', data.message);
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showNotification('error', data.message);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showNotification('error', 'Error importing configuration: ' + error.message);
+    })
+    .finally(() => {
+        fileInput.value = '';
+    });
+}
+
+// Resume file upload functions
+function handleResumeUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = ['.pdf', '.docx', '.doc', '.txt'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+        showNotification('error', 'Please select a PDF, DOCX, DOC, or TXT file.');
+        input.value = '';
+        return;
+    }
+    
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        showNotification('error', 'File size must be less than 10MB.');
+        input.value = '';
+        return;
+    }
+    
+    showLoading('Processing resume file...');
+    
+    const formData = new FormData();
+    formData.append('resume_file', file);
+    
+    fetch('/api/upload-resume', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            // Update the textarea with extracted text
+            document.getElementById('resume_text').value = data.text;
+            showNotification('success', `Resume uploaded and processed successfully! Extracted ${data.text.length} characters.`);
+        } else {
+            showNotification('error', data.message || 'Error processing resume file.');
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showNotification('error', 'Error uploading resume: ' + error.message);
+    });
+}
+
+function clearResumeFile() {
+    document.getElementById('resume_file').value = '';
+    showNotification('info', 'File selection cleared.');
+}
+</script>
+{% endblock %} 

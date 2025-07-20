@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}JobFinder - Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">📋 JobFinder - Approved Jobs Dashboard</h1>
+</div>
+
+<!-- Job Management Section (Dashboard Only) -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🛠️ Job Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-stretch">
+                    <!-- Total Jobs Counter -->
+                    <div class="col-lg-3 col-md-4 mb-3">
+                        <div class="card text-white bg-primary h-100">
+                            <div class="card-body d-flex align-items-center justify-content-center">
+                                <div class="text-center">
+                                    <h3 class="card-title mb-1">{{ total_jobs }}</h3>
+                                    <p class="card-text mb-0 small">Total Approved Jobs</p>
+                                    <i class="bi bi-briefcase mt-1" style="font-size: 1.2rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Control Buttons -->
+                    <div class="col-lg-6 col-md-8 mb-3">
+                        <div class="d-flex flex-column h-100">
+                            <div class="row flex-grow-1">
+                                <div class="col-md-6 mb-2">
+                                    <button id="start-scan-btn" class="btn btn-success w-100 h-100" onclick="startScan()">
+                                        <i class="bi bi-play-circle me-2"></i>
+                                        Start New Job Scan
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <button id="stop-scan-btn" class="btn btn-danger w-100 h-100" onclick="stopScan()" disabled>
+                                        <i class="bi bi-stop-circle me-2"></i>
+                                        Stop Scan
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <button id="clear-jobs-btn" class="btn btn-outline-danger w-100" onclick="clearAllJobs()">
+                                        <i class="bi bi-trash me-2"></i>
+                                        Clear All Approved Jobs
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scan Status Display -->
+                    <div class="col-lg-3 col-md-12 mb-3">
+                        <div id="scan-status" class="h-100 d-flex align-items-center">
+                            <div class="w-100">
+                                <div id="scan-message" class="alert alert-info d-none mb-0" role="alert"></div>
+                                {% if scan_state.is_running %}
+                                <div class="alert alert-warning mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="spinner-border spinner-border-sm text-warning me-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="alert-heading mb-1">Scan in Progress</h6>
+                                            <p class="mb-0 small">{{ scan_state.last_message }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="text-muted text-center">
+                                    <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                                    <p class="mb-0 small mt-1">Ready to scan</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Jobs List -->
+{% if jobs %}
+    {% for job in jobs %}
+    <div class="card mb-3 job-card" data-job-id="{{ job.approved_job_pk }}">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-9">
+                    <!-- Job Title (clickable link) -->
+                    <h5 class="card-title mb-2">
+                        <a href="{{ job.url }}" target="_blank" class="text-decoration-none text-dark">
+                            {{ job.title_escaped|safe }}
+                            <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                        </a>
+                    </h5>
+                    
+                    <!-- Job Details -->
+                    <div class="text-muted mb-2">
+                        <small>
+                            <i class="bi bi-calendar me-1"></i>
+                            Approved: {{ job.date_approved }}
+                            {% if job.location and job.location != 'N/A' %}
+                            | <i class="bi bi-geo-alt me-1"></i>
+                            Location: {{ job.location }}
+                            {% endif %}
+                            {% if job.keyword and job.keyword != 'N/A' %}
+                            | <i class="bi bi-tag me-1"></i>
+                            Keyword: {{ job.keyword }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Job Description (Collapsible) -->
+                    <div class="mb-2">
+                        <button class="btn btn-link p-0 text-start" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#description-{{ job.approved_job_pk }}" aria-expanded="false">
+                            <i class="bi bi-chevron-right me-1"></i>
+                            View Original Job Description
+                        </button>
+                        <div class="collapse mt-2" id="description-{{ job.approved_job_pk }}">
+                            <div class="card card-body bg-light">
+                                <small style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ job.description_escaped|safe }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Approval Reason (Collapsible) -->
+                    <div class="mb-2">
+                        <button class="btn btn-link p-0 text-start" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#reason-{{ job.approved_job_pk }}" aria-expanded="false">
+                            <i class="bi bi-chevron-right me-1"></i>
+                            Reason for Approval
+                        </button>
+                        <div class="collapse mt-2" id="reason-{{ job.approved_job_pk }}">
+                            <div class="card card-body bg-light">
+                                <small style="white-space: pre-wrap;">{{ job.reason_escaped|safe }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="col-md-3 d-flex flex-column justify-content-center">
+                    <div class="btn-group w-100 mb-2" role="group">
+                        <button class="btn btn-info" 
+                                onclick="openCompanyWebsite('{{ job.title|e }}', '{{ job.description[:200]|e }}')" 
+                                title="Try to find and open the company's website">
+                            <i class="bi bi-globe me-1"></i>
+                            Company Website
+                        </button>
+                        <button type="button" class="btn btn-info dropdown-toggle dropdown-toggle-split" 
+                                data-bs-toggle="dropdown" aria-expanded="false" title="More website options">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="searchCompanyGoogle('{{ job.title|e }}')">
+                                <i class="bi bi-search me-2"></i>Google Search
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="searchCompanyLinkedIn('{{ job.title|e }}')">
+                                <i class="bi bi-linkedin me-2"></i>LinkedIn Company Page
+                            </a></li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-primary mb-2 generate-resume-btn" 
+                            onclick="generateResume({{ job.approved_job_pk }})" 
+                            title="Generate a personalized resume for this job">
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        <span class="btn-text">Generate Resume</span>
+                        <span class="btn-loading d-none">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Generating...
+                        </span>
+                    </button>
+                    
+                    <button class="btn btn-success mb-2 mark-applied-btn" 
+                            onclick="markAsApplied({{ job.approved_job_pk }})" 
+                            title="Mark this job as applied for">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Mark as Applied
+                    </button>
+                    
+                    <button class="btn btn-outline-danger delete-job-btn" 
+                            onclick="deleteJob({{ job.approved_job_pk }})" 
+                            title="Remove this job from the approved list">
+                        <i class="bi bi-trash me-1"></i>
+                        Delete Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-warning" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h6 class="alert-heading mb-1">No Approved Jobs Found</h6>
+                <p class="mb-0">No approved jobs found in the database. Click "Start New Job Scan" to begin discovering jobs.</p>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Loading overlay for actions -->
+<div id="loading-overlay" class="d-none position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="z-index: 9999;">
+    <div class="text-center text-white">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div id="loading-message">Processing...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %} 
