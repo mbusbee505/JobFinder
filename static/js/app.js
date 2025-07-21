@@ -123,40 +123,40 @@ function updateScanStatus(status, message) {
     }
 }
 
-// Notification system
+// Subtle notification system - only shows critical messages
 function showNotification(type, message) {
-    const notificationArea = document.getElementById('notification-area');
-    if (!notificationArea) return;
+    // Only show critical errors and important success messages
+    if (type === 'error' || (type === 'success' && (
+        message.includes('saved successfully') ||
+        message.includes('complete') ||
+        message.includes('imported successfully') ||
+        message.includes('exported successfully')
+    ))) {
+        showStatusMessage(type, message);
+    }
+    // Silently ignore info/warning messages and routine success messages
+}
+
+// Show brief status message for critical notifications only
+function showStatusMessage(type, message) {
+    const statusBar = document.getElementById('status-bar');
+    const statusMessage = document.getElementById('status-message');
     
-    const alertClass = type === 'error' ? 'alert-danger' : 
-                     type === 'success' ? 'alert-success' : 
-                     type === 'warning' ? 'alert-warning' : 'alert-info';
+    if (!statusBar || !statusMessage) return;
     
-    const icon = type === 'error' ? 'bi-exclamation-triangle' : 
-                type === 'success' ? 'bi-check-circle' : 
-                type === 'warning' ? 'bi-exclamation-triangle' : 'bi-info-circle';
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
     
-    const notification = document.createElement('div');
-    notification.className = `alert ${alertClass} alert-dismissible fade show`;
-    notification.innerHTML = `
-        <i class="bi ${icon} me-2"></i>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    statusBar.className = `alert ${alertClass} alert-dismissible fade show mt-3`;
+    statusMessage.textContent = message;
+    statusBar.classList.remove('d-none');
     
-    notificationArea.appendChild(notification);
-    
-    // Auto-dismiss after 5 seconds
+    // Auto-dismiss after 3 seconds for non-errors, 6 seconds for errors
+    const timeout = type === 'error' ? 6000 : 3000;
     setTimeout(() => {
-        if (notification && notification.parentNode) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 150);
+        if (statusBar && !statusBar.classList.contains('d-none')) {
+            statusBar.classList.add('d-none');
         }
-    }, 5000);
+    }, timeout);
 }
 
 // Job Management Functions

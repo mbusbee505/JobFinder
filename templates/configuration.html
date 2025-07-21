@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Configuration - JobFinder{% endblock %}
+{% block title %}Settings - JobFinder{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">⚙️ JobFinder - Configuration</h1>
+    <h1 class="h2">⚙️ JobFinder - Settings</h1>
 </div>
 
 <form id="config-form" method="post" action="/api/save-config">
@@ -193,9 +193,26 @@
 
 {% block extra_scripts %}
 <script>
+// Local status message function for validation errors
+function showStatusMessage(type, message) {
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const statusDiv = document.createElement('div');
+    statusDiv.className = `alert ${alertClass} alert-dismissible fade show mt-2`;
+    statusDiv.innerHTML = `${message} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    
+    // Insert at top of main content
+    const main = document.querySelector('main');
+    if (main && main.firstChild) {
+        main.insertBefore(statusDiv, main.firstChild);
+    }
+    
+    // Auto-dismiss
+    setTimeout(() => statusDiv.remove(), 4000);
+}
+
 document.getElementById('config-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    submitForm('config-form', '/api/save-config', 'Configuration saved successfully!');
+    submitForm('config-form', '/api/save-config', 'Settings saved successfully!');
 });
 
 function exportConfig() {
@@ -210,10 +227,10 @@ function exportConfig() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        showNotification('success', 'Configuration exported successfully!');
+        showNotification('success', 'Settings exported successfully!');
     })
     .catch(error => {
-        showNotification('error', 'Error exporting configuration: ' + error.message);
+        showNotification('error', 'Error exporting settings: ' + error.message);
     });
 }
 
@@ -230,7 +247,7 @@ function importConfig() {
     const formData = new FormData();
     formData.append('config_file', file);
     
-    showLoading('Importing configuration...');
+    showLoading('Importing settings...');
     
     fetch('/api/import-config', {
         method: 'POST',
@@ -248,7 +265,7 @@ function importConfig() {
     })
     .catch(error => {
         hideLoading();
-        showNotification('error', 'Error importing configuration: ' + error.message);
+        showNotification('error', 'Error importing settings: ' + error.message);
     })
     .finally(() => {
         fileInput.value = '';
@@ -265,14 +282,14 @@ function handleResumeUpload(input) {
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     
     if (!allowedTypes.includes(fileExtension)) {
-        showNotification('error', 'Please select a PDF, DOCX, DOC, or TXT file.');
+        showStatusMessage('error', 'Please select a PDF, DOCX, DOC, or TXT file.');
         input.value = '';
         return;
     }
     
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-        showNotification('error', 'File size must be less than 10MB.');
+        showStatusMessage('error', 'File size must be less than 10MB.');
         input.value = '';
         return;
     }
@@ -305,7 +322,7 @@ function handleResumeUpload(input) {
 
 function clearResumeFile() {
     document.getElementById('resume_file').value = '';
-    showNotification('info', 'File selection cleared.');
+    // File selection cleared silently
 }
 </script>
 {% endblock %} 

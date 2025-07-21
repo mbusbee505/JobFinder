@@ -380,8 +380,9 @@ async def statistics(request: Request):
         })
 
 @app.get("/configuration", response_class=HTMLResponse)
+@app.get("/settings", response_class=HTMLResponse)
 async def configuration_page(request: Request):
-    """Configuration page - replaces 03_Inputs.py"""
+    """Settings/Configuration page - replaces 03_Inputs.py"""
     try:
         config_data = load_config_data(CONFIG_FILE_PATH)
         if not config_data:

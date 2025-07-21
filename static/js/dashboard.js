@@ -177,25 +177,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Enhanced company website finder function with better error handling
-function openCompanyWebsite(jobTitle, jobDescription) {
+// Enhanced company website finder function with priority order: job posting > careers > main website
+function openCompanyWebsite(jobTitle, jobDescription, jobUrl) {
     try {
-        // Extract company name from job title
+        // PRIORITY 1: Try the original job posting URL first (if not LinkedIn)
+        if (jobUrl && !jobUrl.includes('linkedin.com')) {
+            window.open(jobUrl, '_blank');
+            return;
+        }
+        
+        // PRIORITY 2 & 3: Extract company name and try careers page, then main website
         let companyName = extractCompanyName(jobTitle, jobDescription);
         
         if (!companyName) {
-            showNotification('warning', 'Could not identify company name from job posting. Opening Google search instead.');
-            // Fallback to general job search
+            // Fallback to general job search silently
             const searchQuery = jobTitle.split(' ').slice(0, 4).join(' ') + ' careers jobs';
             const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
             window.open(googleUrl, '_blank');
             return;
         }
         
-        showNotification('info', `Looking for ${companyName} careers page...`);
-        
-        // Skip direct URL attempts that cause 403 errors, go straight to intelligent search
-        openCompanyCareerSearch(companyName);
+        // Try company websites in priority order
+        tryCompanyWebsites(companyName, 0);
         
     } catch (error) {
         console.error('Error finding company website:', error);
@@ -203,21 +206,47 @@ function openCompanyWebsite(jobTitle, jobDescription) {
     }
 }
 
-// Intelligent company career search function
-function openCompanyCareerSearch(companyName) {
-    // Use multiple search strategies simultaneously
+// Try company websites in priority order: careers pages, then main website
+function tryCompanyWebsites(companyName, attemptIndex = 0) {
+    const cleanName = companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
     
-    // Primary: Google search for company careers
+    // Define URL patterns to try in order
+    const urlPatterns = [
+        // Priority 2A: Primary careers page patterns
+        `https://careers.${cleanName}.com`,
+        `https://www.${cleanName}.com/careers`,
+        // Priority 2B: Jobs page patterns  
+        `https://jobs.${cleanName}.com`,
+        `https://www.${cleanName}.com/jobs`,
+        // Priority 3: Main website
+        `https://www.${cleanName}.com`,
+        `https://${cleanName}.com`
+    ];
+    
+    if (attemptIndex >= urlPatterns.length) {
+        // All direct attempts failed, fall back to search
+        openCompanyCareerSearch(companyName);
+        return;
+    }
+    
+    const url = urlPatterns[attemptIndex];
+    
+    // Try opening the URL
+    window.open(url, '_blank');
+    
+    // Stop after first attempt to avoid opening too many tabs
+    // User can use dropdown for alternative attempts
+}
+
+// Intelligent company career search function (fallback)
+function openCompanyCareerSearch(companyName) {
+    // Use targeted Google search as final fallback
     const careerSearchQuery = `"${companyName}" careers jobs site:${companyName.toLowerCase().replace(/\s+/g, '')}.com OR site:careers.${companyName.toLowerCase().replace(/\s+/g, '')}.com OR site:jobs.${companyName.toLowerCase().replace(/\s+/g, '')}.com`;
     const googleCareerUrl = `https://www.google.com/search?q=${encodeURIComponent(careerSearchQuery)}`;
     
-    // Fallback: broader search if the specific search doesn't work
-    const broadSearchQuery = `"${companyName}" careers "current openings" OR "job opportunities" OR "apply now"`;
-    const googleBroadUrl = `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`;
-    
     // Open the targeted search
     window.open(googleCareerUrl, '_blank');
-    showNotification('success', `Opened targeted search for "${companyName}" careers page. This should find their job listings directly.`);
+    // Opened targeted career search silently
 }
 
 function extractCompanyName(jobTitle, jobDescription) {
@@ -284,28 +313,36 @@ function fallbackToGoogleSearch(companyName) {
 function searchCompanyGoogle(jobTitle) {
     const companyName = extractCompanyName(jobTitle, '');
     if (companyName) {
-        // Use the same intelligent search as the main button
-        openCompanyCareerSearch(companyName);
+        // Try alternative company website patterns (different from main button)
+        const cleanName = companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+        const alternativeUrls = [
+            `https://${cleanName}.com/careers`,
+            `https://${cleanName}.com/jobs`, 
+            `https://${cleanName}.com`
+        ];
+        
+        // Try the first alternative URL
+        window.open(alternativeUrls[0], '_blank');
     } else {
-        const searchQuery = jobTitle.split(' ').slice(0, 4).join(' ') + ' careers jobs'; // Use first few words + careers jobs
+        const searchQuery = jobTitle.split(' ').slice(0, 4).join(' ') + ' careers jobs';
         const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
         window.open(googleUrl, '_blank');
-        showNotification('info', 'Opened Google job search using job title');
+        // Opened job search silently
     }
 }
 
 function searchCompanyLinkedIn(jobTitle) {
     const companyName = extractCompanyName(jobTitle, '');
     if (companyName) {
-        // Search for company jobs on LinkedIn instead of just company page
-        const jobSearchQuery = `${companyName}`;
-        const linkedInUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(jobSearchQuery)}&f_C=${encodeURIComponent(companyName)}`;
-        window.open(linkedInUrl, '_blank');
-        showNotification('info', `Opened LinkedIn jobs search for "${companyName}"`);
+        // Try main company website as alternative to careers pages
+        const cleanName = companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+        const mainWebsiteUrl = `https://www.${cleanName}.com`;
+        window.open(mainWebsiteUrl, '_blank');
+        // Opened main company website
     } else {
-        const searchQuery = jobTitle.split(' ').slice(0, 4).join(' '); // Use first few words
+        const searchQuery = jobTitle.split(' ').slice(0, 4).join(' ');
         const linkedInUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(searchQuery)}`;
         window.open(linkedInUrl, '_blank');
-        showNotification('info', 'Opened LinkedIn job search using job title');
+        // Opened LinkedIn search silently
     }
 }
