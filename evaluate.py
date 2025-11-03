@@ -1,6 +1,11 @@
 # evaluate.py
 import re
-from config import load, get_user_config
+try:
+    # Try to import from multi-user utils first
+    from utils_multiuser import load_user_config as get_user_config
+except ImportError:
+    # Fall back to single-user config
+    from config import get_user_config
 
 import os
 import json

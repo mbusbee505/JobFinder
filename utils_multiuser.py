@@ -134,7 +134,8 @@ def get_default_config():
             'locations': ['Remote', 'New York', 'San Francisco'],
             'experience_level': 'entry',
             'job_type': 'full-time',
-            'max_jobs_per_search': 50
+            'max_jobs_per_search': 50,
+            'exclusion_keywords': []
         },
         'prompts': {
             'evaluation_prompt': """Please evaluate this job posting based on the following criteria:
@@ -151,6 +152,9 @@ Do NOT reject the job solely for:
 - Asking for 1-2 years of experience
 - Requiring specific tools experience
 - Listing certifications as requirements (unless explicitly marked as "must have before starting")"""
+        },
+        'resume': {
+            'text': ''
         },
         'api_keys': {
             'openai_api_key': '',

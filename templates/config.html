@@ -151,6 +151,27 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="evaluation_prompt" class="form-label">Job Evaluation Prompt</label>
+                        <textarea class="form-control font-monospace" id="evaluation_prompt" rows="12"
+                                  placeholder="Enter your custom evaluation criteria...">{{ config.prompts.evaluation_prompt if config.prompts and config.prompts.evaluation_prompt else '' }}</textarea>
+                        <div class="form-text">This prompt will be used by the AI to evaluate job descriptions. Customize it to match your specific requirements and preferences.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resume -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-text"></i> Resume / Profile</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="resume_text" class="form-label">Your Resume Text</label>
+                        <textarea class="form-control font-monospace" id="resume_text" rows="10"
+                                  placeholder="Paste your resume text here (optional)...">{{ config.resume.text if config.resume and config.resume.text else '' }}</textarea>
+                        <div class="form-text">Optional: Your resume text can help the AI better match jobs to your qualifications.</div>
+                    </div>
                 </div>
             </div>
 
