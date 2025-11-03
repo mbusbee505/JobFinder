@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - JobFinder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="bi bi-gear-fill"></i> Configuration</h1>
+        <p class="text-muted">Manage your JobFinder settings and preferences.</p>
+
+        <!-- Preset Management -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bookmark-fill"></i> Configuration Presets</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted mb-0">Save and manage multiple configuration presets for different job search strategies.</p>
+                            {% if presets %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteAllPresets()">
+                                <i class="bi bi-trash3"></i> Delete All
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <!-- Current Presets -->
+                        <div class="row" id="presets-container">
+                            {% for preset in presets %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card preset-card" data-preset-name="{{ preset.name }}">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ preset.display_name }}</h6>
+                                        <p class="card-text text-muted small">{{ preset.description or 'No description' }}</p>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary apply-preset" data-preset="{{ preset.name }}">
+                                                <i class="bi bi-play-fill"></i> Apply
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger delete-preset" data-preset="{{ preset.name }}" data-name="{{ preset.display_name }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if not presets %}
+                            <div class="col-12">
+                                <div class="text-center py-4">
+                                    <i class="bi bi-bookmark display-4 text-muted mb-3"></i>
+                                    <h6 class="text-muted mb-3">No presets available</h6>
+                                    <p class="text-muted mb-3">Create your first preset using the form on the right, or restore the default presets.</p>
+                                    <button type="button" class="btn btn-outline-primary" onclick="createDefaultPresets()">
+                                        <i class="bi bi-plus-circle"></i> Create Default Presets
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- Save Current Config as Preset -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Save Current Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="save-preset-form">
+                                    <div class="mb-3">
+                                        <label for="preset-name" class="form-label">Preset Name</label>
+                                        <input type="text" class="form-control" id="preset-name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="preset-display-name" class="form-label">Display Name (Optional)</label>
+                                        <input type="text" class="form-control" id="preset-display-name">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="preset-description" class="form-label">Description (Optional)</label>
+                                        <textarea class="form-control" id="preset-description" rows="2"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-bookmark-plus"></i> Save Preset
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="config-form">
+            <!-- Search Parameters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Search Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="locations" class="form-label">Locations</label>
+                                <textarea class="form-control" id="locations" rows="4"
+                                          placeholder="Remote&#10;New York, NY&#10;San Francisco, CA">{{ config.search_parameters.locations | join('\n') if config.search_parameters and config.search_parameters.locations else '' }}</textarea>
+                                <div class="form-text">One location per line. Use "Remote" for remote positions.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="keywords" class="form-label">Keywords</label>
+                                <textarea class="form-control" id="keywords" rows="4"
+                                          placeholder="Software Engineer&#10;Python Developer&#10;Backend Developer">{{ config.search_parameters.keywords | join('\n') if config.search_parameters and config.search_parameters.keywords else '' }}</textarea>
+                                <div class="form-text">One keyword per line. These will be used to search for jobs.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exclusions" class="form-label">Exclusion Keywords</label>
+                        <textarea class="form-control" id="exclusions" rows="3"
+                                  placeholder="Senior&#10;Sr.&#10;Lead&#10;Manager">{{ config.search_parameters.exclusion_keywords | join('\n') if config.search_parameters and config.search_parameters.exclusion_keywords else '' }}</textarea>
+                        <div class="form-text">Jobs containing these keywords will be automatically excluded.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-robot"></i> AI Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="ai_provider" class="form-label">AI Provider</label>
+                                <select class="form-select" id="ai_provider">
+                                    <option value="openai" {{ 'selected' if config.general and config.general.ai_provider == 'openai' else '' }}>OpenAI</option>
+                                </select>
+                                <div class="form-text">AI provider for job evaluation.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="openai_api_key" class="form-label">OpenAI API Key</label>
+                                <input type="password" class="form-control" id="openai_api_key"
+                                       value="{{ config.api_keys.openai_api_key if config.api_keys and config.api_keys.openai_api_key != 'YOUR_OPENAI_API_KEY_HERE' else '' }}"
+                                       placeholder="sk-...">
+                                <div class="form-text">Your OpenAI API key for O3 model access.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            {% if project_info %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> System Information</h5>
+                    <a href="{{ url_for('logs_page') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-activity"></i> View System Logs
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Project Root:</strong><br><code>{{ project_info.project_root }}</code></p>
+                            <p><strong>Database:</strong><br><code>{{ project_info.db_path }}</code>
+                                {% if project_info.db_exists %}
+                                    <span class="badge bg-success ms-2">Exists</span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2">Not Found</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Configuration:</strong><br><code>{{ project_info.config_file }}</code>
+                                {% if project_info.config_exists %}
+                                    <span class="badge bg-success ms-2">Exists</span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2">Not Found</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Data Directory:</strong><br><code>{{ project_info.data_dir }}</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Save Button -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg"></i> Save Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Overlay (non-Bootstrap) -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 mb-0">Saving configuration...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('config-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    showLoading();
+
+    try {
+        // Collect form data
+        const configData = {
+            search_parameters: {
+                locations: document.getElementById('locations').value.split('\n').filter(l => l.trim()),
+                keywords: document.getElementById('keywords').value.split('\n').filter(k => k.trim()),
+                exclusion_keywords: document.getElementById('exclusions').value.split('\n').filter(e => e.trim())
+            },
+            api_keys: {
+                openai_api_key: document.getElementById('openai_api_key').value || 'YOUR_OPENAI_API_KEY_HERE'
+            },
+            general: {
+                ai_provider: document.getElementById('ai_provider').value
+            },
+            resume: {
+                text: document.getElementById('resume_text').value
+            },
+            prompts: {
+                evaluation_prompt: document.getElementById('evaluation_prompt').value
+            }
+        };
+
+        console.log('Sending config save request...');
+        const response = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(configData)
+        });
+
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Response data:', result);
+
+        hideLoading();
+
+        if (result.success) {
+            showAlert('Configuration saved successfully!', 'success');
+        } else {
+            showAlert(result.message || 'Error saving configuration', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving configuration:', error);
+        hideLoading();
+        showAlert('Error saving configuration: ' + error.message, 'error');
+    }
+});
+
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function showAlert(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    const container = document.querySelector('main .container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+
+    // Auto-dismiss success alerts
+    if (type === 'success') {
+        const alertElement = container.querySelector('.alert-success');
+        setTimeout(() => {
+            if (alertElement && document.body.contains(alertElement)) {
+                try {
+                    const bsAlert = bootstrap.Alert.getInstance(alertElement);
+                    if (bsAlert) {
+                        bsAlert.close();
+                    } else {
+                        alertElement.remove();
+                    }
+                } catch (e) {
+                    // Fallback: just remove it
+                    if (alertElement.parentNode) {
+                        alertElement.remove();
+                    }
+                }
+            }
+        }, 3000);
+    }
+}
+
+// Preset Management Functions
+document.addEventListener('DOMContentLoaded', function() {
+    // Save preset form handler
+    const savePresetForm = document.getElementById('save-preset-form');
+    if (savePresetForm) {
+        savePresetForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const presetName = document.getElementById('preset-name').value.trim();
+            const displayName = document.getElementById('preset-display-name').value.trim();
+            const description = document.getElementById('preset-description').value.trim();
+
+            if (!presetName) {
+                showAlert('Preset name is required', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/presets/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: presetName,
+                        display_name: displayName,
+                        description: description
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    savePresetForm.reset();
+                    // Reload page to show new preset
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showAlert(result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error saving preset: ' + error.message, 'error');
+            }
+        });
+    }
+
+    // Apply preset handlers
+    document.querySelectorAll('.apply-preset').forEach(button => {
+        button.addEventListener('click', async function() {
+            const presetName = this.getAttribute('data-preset');
+
+            // Confirm before applying
+            if (!confirm(`Apply this preset? This will replace your current configuration.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/presets/apply/${presetName}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    // Reload page to show new configuration
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showAlert(result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error applying preset: ' + error.message, 'error');
+            }
+        });
+    });
+
+    // Delete preset handlers
+    document.querySelectorAll('.delete-preset').forEach(button => {
+        button.addEventListener('click', async function() {
+            const presetName = this.getAttribute('data-preset');
+            const displayName = this.getAttribute('data-name');
+
+            // Confirm before deleting
+            if (!confirm(`Delete preset "${displayName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/presets/delete/${presetName}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    // Remove the preset card from DOM
+                    const presetCard = this.closest('.preset-card').parentElement;
+                    presetCard.remove();
+
+                    // Show no presets message if all are gone
+                    const presetsContainer = document.getElementById('presets-container');
+                    if (presetsContainer.children.length === 0) {
+                        presetsContainer.innerHTML = '<div class="col-12"><p class="text-muted">No presets available. Create your first preset below!</p></div>';
+                    }
+                } else {
+                    showAlert(result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting preset: ' + error.message, 'error');
+            }
+        });
+    });
+
+    // Delete all presets
+    window.deleteAllPresets = async function() {
+        if (!confirm('Delete all presets? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/presets/delete-all', {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                // Clear the presets container and show empty state
+                const presetsContainer = document.getElementById('presets-container');
+                presetsContainer.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-4">
+                            <i class="bi bi-bookmark display-4 text-muted mb-3"></i>
+                            <h6 class="text-muted mb-3">No presets available</h6>
+                            <p class="text-muted mb-3">Create your first preset using the form on the right, or restore the default presets.</p>
+                            <button type="button" class="btn btn-outline-primary" onclick="createDefaultPresets()">
+                                <i class="bi bi-plus-circle"></i> Create Default Presets
+                            </button>
+                        </div>
+                    </div>
+                `;
+                // Hide the Delete All button
+                const deleteAllBtn = document.querySelector('button[onclick="deleteAllPresets()"]');
+                if (deleteAllBtn) {
+                    deleteAllBtn.style.display = 'none';
+                }
+            } else {
+                showAlert(result.message, 'error');
+            }
+        } catch (error) {
+            showAlert('Error deleting all presets: ' + error.message, 'error');
+        }
+    };
+
+    // Create default presets
+    window.createDefaultPresets = async function() {
+        try {
+            const response = await fetch('/api/presets/create-defaults', {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message, 'success');
+                // Reload page to show new presets
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showAlert(result.message, 'error');
+            }
+        } catch (error) {
+            showAlert('Error creating default presets: ' + error.message, 'error');
+        }
+    };
+});
+</script>
+{% endblock %}

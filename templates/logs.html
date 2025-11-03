@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - JobFinder{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="bi bi-journal-text"></i> System Logs</h1>
+        <p class="text-muted">Monitor system activity and job processing history.</p>
+
+        <!-- Scan Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Scan Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            <span id="current-status" class="badge bg-secondary">Loading...</span>
+                        </p>
+                        <p><strong>Controls:</strong></p>
+                        <div class="btn-group" role="group">
+                            <button id="start-scan-logs" class="btn btn-success btn-sm" onclick="startScan()">
+                                <i class="bi bi-play-fill"></i> Start Scan
+                            </button>
+                            <button id="stop-scan-logs" class="btn btn-danger btn-sm" onclick="stopScan()" style="display: none;">
+                                <i class="bi bi-stop-fill"></i> Stop Scan
+                            </button>
+                        </div>
+                        <p><strong>Database Maintenance:</strong></p>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-warning btn-sm" onclick="clearDiscovered()"
+                                    title="Delete all discovered jobs for fresh start">
+                                <i class="bi bi-arrow-clockwise"></i> Fresh Start
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        {% if project_info %}
+                        <p><strong>Database Status:</strong>
+                            {% if project_info.db_exists %}
+                                <span class="badge bg-success">Connected</span>
+                            {% else %}
+                                <span class="badge bg-danger">Not Found</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Configuration:</strong>
+                            {% if project_info.config_exists %}
+                                <span class="badge bg-success">Loaded</span>
+                            {% else %}
+                                <span class="badge bg-warning">Not Found</span>
+                            {% endif %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Recent Approvals -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-check-circle"></i> Recent Approvals</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_approved %}
+                        <div class="list-group list-group-flush">
+                            {% for approval in recent_approved %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        <a href="{{ url_for('job_detail', job_id=approval.job_id) }}"
+                                           class="text-decoration-none">
+                                            {{ approval.title or 'Untitled' }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted" data-utc-timestamp="{{ approval.date_approved | datetime_format }}">{{ approval.date_approved | datetime_format }}</small>
+                                </div>
+                                <p class="mb-1 small">{{ approval.reason | truncate_text(120) }}</p>
+                                <small class="text-muted">
+                                    <a href="{{ approval.url }}" target="_blank" class="text-muted">
+                                        <i class="bi bi-box-arrow-up-right"></i> LinkedIn
+                                    </a>
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0"><i>No recent approvals</i></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Discoveries -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-search"></i> Recent Discoveries</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_discovered %}
+                        <div class="list-group list-group-flush">
+                            {% for discovery in recent_discovered %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ discovery.title or 'Untitled' }}</h6>
+                                        <p class="mb-1 small text-muted">
+                                            <span class="badge bg-secondary me-1">{{ discovery.location }}</span>
+                                            Job ID: {{ discovery.job_id }}
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if discovery.analyzed %}
+                                            <span class="badge bg-success">Analyzed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                        <br>
+                                        <small class="text-muted" data-utc-timestamp="{{ discovery.date_discovered | datetime_format }}">{{ discovery.date_discovered | datetime_format }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0"><i>No recent discoveries</i></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        {% if project_info %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Project Root:</dt>
+                            <dd class="col-sm-7"><code>{{ project_info.project_root }}</code></dd>
+                            <dt class="col-sm-5">Database Path:</dt>
+                            <dd class="col-sm-7">
+                                <code>{{ project_info.db_path }}</code>
+                                {% if project_info.db_exists %}
+                                    <span class="badge bg-success ms-2">Exists</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">Missing</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Configuration:</dt>
+                            <dd class="col-sm-7">
+                                <code>{{ project_info.config_file }}</code>
+                                {% if project_info.config_exists %}
+                                    <span class="badge bg-success ms-2">Loaded</span>
+                                {% else %}
+                                    <span class="badge bg-warning ms-2">Missing</span>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-5">Data Directory:</dt>
+                            <dd class="col-sm-7"><code>{{ project_info.data_dir }}</code></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Auto-refresh indicator -->
+<div id="auto-refresh-indicator" class="position-fixed bottom-0 end-0 m-3" style="display: none;">
+    <div class="toast" role="alert">
+        <div class="toast-body">
+            <i class="bi bi-arrow-clockwise"></i> Auto-refreshing logs...
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh logs every 30 seconds if scan is running
+let refreshInterval;
+
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        updateScanStatus();
+        // Only refresh the whole page if scan is running
+        fetch('/api/scan/status')
+            .then(response => response.json())
+            .then(status => {
+                if (status.is_running) {
+                    showRefreshIndicator();
+                    setTimeout(() => location.reload(), 1000);
+                }
+            });
+    }, 30000); // 30 seconds
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+}
+
+function showRefreshIndicator() {
+    const indicator = document.getElementById('auto-refresh-indicator');
+    indicator.style.display = 'block';
+    setTimeout(() => {
+        indicator.style.display = 'none';
+    }, 2000);
+}
+
+// Start auto-refresh when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateScanStatus();
+    startAutoRefresh();
+});
+
+// Stop auto-refresh when page unloads
+window.addEventListener('beforeunload', stopAutoRefresh);
+
+// Fresh start functionality
+async function clearDiscovered() {
+    if (!confirm('🔄 FRESH START: This will delete ALL discovered jobs (both approved and unapproved) and reset the database completely. Are you sure?')) {
+        return;
+    }
+
+    if (!confirm('⚠️ FINAL CONFIRMATION: This action cannot be undone. All job discovery history will be permanently deleted. Continue?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/jobs/clear-discovered', { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification('🎉 ' + result.message, 'success');
+            // Refresh the page after a brief delay
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Error clearing discovered jobs: ' + error.message, 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification for logs page
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+
+    // Auto-dismiss
+    if (type !== 'error') {
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getInstance(notification);
+            if (alert) alert.close();
+        }, 4000);
+    }
+}
+</script>
+{% endblock %}

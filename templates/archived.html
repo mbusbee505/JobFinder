@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Applied Jobs - JobFinder{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-8">
+        <div>
+            <h1 class="display-5 fw-bold text-gray-900 mb-2">
+                <i class="bi bi-check-circle-fill me-3" style="color: var(--success);"></i>Applied Jobs
+            </h1>
+            <p class="text-gray-600 mb-0">View your applied job applications</p>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Jobs Table -->
+    {% if jobs %}
+    <div class="card slide-up">
+        <div class="card-header">
+            <i class="bi bi-check-circle"></i>
+            <h5>Applied Applications ({{ jobs|length }})</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Job Details</th>
+                            <th>Location</th>
+                            <th>Match Criteria</th>
+                            <th>Approved Date</th>
+                            <th>Applied Date</th>
+                            <th>AI Reasoning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr id="job-{{ job.approved_id }}" class="job-row">
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <div class="fw-semibold text-gray-900 mb-1">
+                                        {{ job.title or 'Untitled Position' }}
+                                    </div>
+                                    <div class="text-sm">
+                                        <a href="{{ job.url }}" target="_blank"
+                                           class="text-gray-500 text-decoration-none hover-primary">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>
+                                            View on LinkedIn
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ job.location }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ job.keyword }}</span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-gray-600" data-utc-timestamp="{{ job.date_approved | datetime_format }}">
+                                    {{ job.date_approved | datetime_format }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="badge bg-success mb-1">Applied</span>
+                                    <span class="text-xs text-gray-500" data-utc-timestamp="{{ job.date_applied | datetime_format }}">
+                                        {{ job.date_applied | datetime_format }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="reason-cell">
+                                    {{ job.reason | truncate_text(100) or 'No reason provided' }}
+                                    {% if job.reason and job.reason|length > 100 %}
+                                    <button class="btn btn-sm btn-link p-0"
+                                            onclick="showFullReason('{{ job.title|e }}', `{{ job.reason|e }}`)">
+                                        <i class="bi bi-arrows-expand"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="bi bi-inbox display-1"></i>
+                <h3 class="mb-3">No Applied Jobs</h3>
+                <p class="text-gray-500 mb-4">
+                    You haven't applied to any jobs yet. When you mark jobs as applied on the dashboard,
+                    they will automatically appear here.
+                </p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Full Reason Modal -->
+<div class="modal fade" id="reasonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reasonModalTitle">AI Reasoning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="reasonModalContent" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showFullReason(title, reason) {
+    document.getElementById('reasonModalTitle').textContent = `AI Reasoning: ${title}`;
+    document.getElementById('reasonModalContent').textContent = reason;
+    const modal = new bootstrap.Modal(document.getElementById('reasonModal'));
+    modal.show();
+}
+
+// Add hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.job-row');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.002)';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+
+<style>
+.job-row {
+    transition: var(--transition);
+}
+
+.job-row:hover {
+    background: rgba(249, 115, 22, 0.02) !important;
+}
+
+.hover-primary:hover {
+    color: var(--primary) !important;
+}
+
+.mb-8 {
+    margin-bottom: var(--space-8);
+}
+
+.text-sm {
+    font-size: var(--font-size-sm);
+}
+
+.text-xs {
+    font-size: var(--font-size-xs);
+}
+
+.fw-semibold {
+    font-weight: 600;
+}
+
+.reason-cell {
+    max-width: 300px;
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+</style>
+{% endblock %}

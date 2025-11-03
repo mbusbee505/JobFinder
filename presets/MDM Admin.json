@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "display_name": "MDM Admin",
+    "description": "MDM Admin",
+    "created_at": "2025-10-15T08:20:33.880074",
+    "last_modified": "2025-10-15T08:20:33.880084",
+    "version": "1.0"
+  },
+  "config": {
+    "search_parameters": {
+      "locations": [
+        "Remote",
+        "Winchester, Virginia, United States"
+      ],
+      "keywords": [
+        "Intune Administrator",
+        "SCCM/Intune Administrator",
+        "MDM",
+        "Mobile Device Management ",
+        "Intune & SCCM Administrator",
+        "Enterprise Mobility",
+        "Endpoint Systems",
+        "Intune Specialist",
+        "Device Management Specialist",
+        "Autopilot Specialist",
+        "Mobile Device Administrator"
+      ],
+      "exclusion_keywords": [
+        "Senior",
+        "Sr.",
+        "Sr",
+        "Tier 2",
+        "Tier II",
+        "Level 2",
+        "L2",
+        "II",
+        "Tier 3",
+        "Tier III",
+        "Level 3",
+        "L3",
+        "Tier 4",
+        "Tier IV",
+        "Level 4",
+        "L4",
+        "III",
+        "IV",
+        "Lead",
+        "Team Lead",
+        "Leader",
+        "Head",
+        "Manager",
+        "Management",
+        "Supervisor",
+        "Director",
+        "Executive",
+        "VP",
+        "Vice President",
+        "Principal",
+        "Architect",
+        "Chief",
+        "Staff",
+        "Distinguished",
+        "Consultant",
+        "Advisor",
+        "Expert",
+        "Architect",
+        "Principal Architect",
+        "Security Clearance",
+        "Clearance Required",
+        "Active Clearance",
+        "Must be able to obtain clearance",
+        "Secret Clearance",
+        "Top Secret",
+        "TS",
+        "SCI",
+        "TS/SCI",
+        "Q Clearance",
+        "L Clearance",
+        "DOE Clearance",
+        "DOD Clearance",
+        "Public Trust",
+        "Polygraph",
+        "CI Poly",
+        "FS Poly",
+        "Full Scope Polygraph",
+        "Counterintelligence Polygraph",
+        "Military",
+        "Officer",
+        "Officers",
+        "Guard",
+        "Developer",
+        "Programmer",
+        "DevOps",
+        "DevSecOps",
+        "SRE",
+        "Site Reliability Engineer",
+        "Penetration",
+        "Threat Hunt",
+        "Sales",
+        "Customer Service",
+        "Intern",
+        "Engineer"
+      ]
+    },
+    "api_keys": {
+      "openai_api_key": "your-openai-api-key-here"
+    },
+    "general": {
+      "ai_provider": "openai"
+    },
+    "resume": {
+      "text": "Your resume text here. Paste your full resume or a summary."
+    },
+    "prompts": {
+      "evaluation_prompt": "Please evaluate this job posting based on the following criteria:\n\nMUST-HAVE Criteria (job must meet ALL of these):\n- Must NOT require any security clearance\n- Must be a full-time position\n- Job Description must not contain the word \"Lensa\"\n- Must require less than 3-5 years experience\n- Must NOT be a night shift / overnight position\n\nFLEXIBLE Criteria (job should ideally meet these, but can be flexible):\n- Technical requirements can be offset by certifications, education, or demonstrated learning ability\n- Tool-specific experience can often be learned on the job\n\nDo NOT reject the job solely for:\n- Asking for 1-2 years of experience\n- Requiring specific tools experience\n- Listing certifications as requirements (unless explicitly marked as \"must have before starting\")"
+    }
+  }
+}

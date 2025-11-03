@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - JobFinder{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <h1 class="display-5 fw-bold text-gray-900 mb-2">
+            <i class="bi bi-briefcase-fill me-3" style="color: var(--primary);"></i>Job Dashboard
+        </h1>
+        <p class="text-gray-600 mb-0">Discover, evaluate, and manage your job opportunities</p>
+    </div>
+
+    <!-- Jobs Table -->
+    {% if jobs %}
+    <div class="card slide-up">
+        <div class="card-header">
+            <i class="bi bi-list-check"></i>
+            <h5>Approved Job Opportunities</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-container">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Job Details</th>
+                            <th>Location</th>
+                            <th>Match Criteria</th>
+                            <th>Approved Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr id="job-{{ job.approved_id }}" class="job-row">
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <div class="fw-semibold text-gray-900 mb-1">
+                                        <a href="{{ url_for('job_detail', job_id=job.job_id) }}"
+                                           class="text-decoration-none job-title-link">
+                                            {{ job.title or 'Untitled Position' }}
+                                        </a>
+                                    </div>
+                                    <div class="text-sm">
+                                        <a href="{{ job.url }}" target="_blank"
+                                           class="text-gray-500 text-decoration-none hover-primary">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>
+                                            View on LinkedIn
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ job.location }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ job.keyword }}</span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-gray-600" data-utc-timestamp="{{ job.date_approved | datetime_format }}">
+                                    {{ job.date_approved | datetime_format }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if job.date_applied %}
+                                    <div class="d-flex flex-column">
+                                        <span class="badge bg-success mb-1">Applied</span>
+                                        <span class="text-xs text-gray-500" data-utc-timestamp="{{ job.date_applied | datetime_format }}">
+                                            {{ job.date_applied | datetime_format }}
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if not job.date_applied %}
+                                    <button class="btn btn-outline-success"
+                                            onclick="markApplied({{ job.approved_id }})"
+                                            title="Mark as Applied">
+                                        <i class="bi bi-check2"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-outline-danger"
+                                            onclick="deleteJob({{ job.approved_id }})"
+                                            title="Remove Job">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Approved Button -->
+    <div class="d-flex justify-content-end mt-4">
+        <button class="btn btn-outline-danger" onclick="clearApproved()">
+            <i class="bi bi-trash3"></i> Clear All Approved Jobs
+        </button>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="bi bi-inbox display-1"></i>
+                <h3 class="mb-3">No Jobs Discovered Yet</h3>
+                <p class="text-gray-500 mb-4">
+                    Start your job discovery process to find opportunities that match your criteria.
+                    Our AI will automatically evaluate and approve relevant positions.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modern Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5">
+                <div class="spinner mb-4"></div>
+                <h6 class="text-gray-700 mb-0">Processing your request...</h6>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enhanced interaction functions
+async function markApplied(approvedId) {
+    const row = document.getElementById(`job-${approvedId}`);
+    showLoading();
+
+    try {
+        const response = await fetch(`/api/job/${approvedId}/apply`, { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            // Add success animation
+            row.style.background = 'rgba(16, 185, 129, 0.1)';
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Error marking job as applied', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteJob(approvedId) {
+    const row = document.getElementById(`job-${approvedId}`);
+
+    try {
+        const response = await fetch(`/api/job/${approvedId}/delete`, { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            // Slide out animation
+            row.style.transform = 'translateX(100%)';
+            row.style.opacity = '0';
+            setTimeout(() => row.remove(), 300);
+            showNotification('Job removed successfully', 'success');
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Error removing job', 'error');
+    }
+}
+
+async function archiveApplied() {
+    if (!confirm('Archive all applied jobs? This will hide them from your dashboard.')) return;
+
+    showLoading();
+    try {
+        const response = await fetch('/api/jobs/archive-applied', { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Error archiving jobs', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function clearApproved() {
+    if (!confirm('Remove ALL approved jobs? This action cannot be undone!')) return;
+
+    showLoading();
+    try {
+        const response = await fetch('/api/jobs/clear-approved', { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Error clearing jobs', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+
+function showLoading() {
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
+}
+
+function hideLoading() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+    if (modal) modal.hide();
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification-toast').forEach(toast => toast.remove());
+
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const icon = type === 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
+
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show notification-toast position-fixed slide-up`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '350px';
+    notification.innerHTML = `
+        <i class="bi ${icon} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto-dismiss success messages
+    if (type !== 'error') {
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getInstance(notification);
+            if (alert) alert.close();
+        }, 4000);
+    }
+}
+
+// Add hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate stats on load
+    const statNumbers = document.querySelectorAll('.stat-number');
+    statNumbers.forEach((stat, index) => {
+        const finalValue = parseInt(stat.textContent);
+        stat.textContent = '0';
+
+        setTimeout(() => {
+            animateNumber(stat, 0, finalValue, 1000);
+        }, index * 200);
+    });
+});
+
+function animateNumber(element, start, end, duration) {
+    const range = end - start;
+    const startTime = Date.now();
+
+    function updateNumber() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.floor(start + (range * progress));
+
+        element.textContent = current;
+
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        }
+    }
+
+    updateNumber();
+}
+</script>
+
+<style>
+.job-title-link {
+    color: var(--gray-900) !important;
+    transition: var(--transition);
+}
+
+.job-title-link:hover {
+    color: var(--primary) !important;
+}
+
+.hover-primary:hover {
+    color: var(--primary) !important;
+}
+
+.job-row {
+    transition: var(--transition);
+}
+
+.job-row:hover {
+    background: rgba(99, 102, 241, 0.02) !important;
+}
+
+.mb-8 {
+    margin-bottom: var(--space-8);
+}
+
+.mb-6 {
+    margin-bottom: var(--space-6);
+}
+
+.gap-3 {
+    gap: var(--space-3);
+}
+
+.text-sm {
+    font-size: var(--font-size-sm);
+}
+
+.text-xs {
+    font-size: var(--font-size-xs);
+}
+
+.fw-semibold {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
