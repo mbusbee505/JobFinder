@@ -54,8 +54,14 @@ def login():
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
+        email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
+
+        # Special handling for admin username (not an email)
+        if email.lower() == 'admin':
+            email = 'admin'
+        else:
+            email = email.lower()
 
         user = User.verify_password(email, password)
         if user:
@@ -67,7 +73,7 @@ def login():
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard'))
         else:
-            flash('Invalid email or password.', 'error')
+            flash('Invalid username/email or password.', 'error')
 
     return render_template('login.html')
 
