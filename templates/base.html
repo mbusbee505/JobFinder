@@ -51,6 +51,14 @@
                 </ul>
 
                 <ul class="navbar-nav">
+                    {% if current_user.is_authenticated and current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+                           href="{{ url_for('admin_dashboard') }}">
+                            <i class="bi bi-shield-lock"></i> Admin
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <button id="start-scan" class="btn btn-success shadow-sm" onclick="startScan()">
                             <i class="bi bi-play-fill"></i> Start Discovery
@@ -71,6 +79,18 @@
                             <i class="bi bi-moon-fill" id="theme-icon"></i>
                         </button>
                     </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ current_user.name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
