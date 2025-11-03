@@ -334,6 +334,153 @@ def save_config_api():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error saving configuration: {str(e)}'})
 
+# Preset management routes
+@app.route('/api/presets/list')
+@login_required
+def api_list_presets():
+    """Get list of available presets for current user"""
+    try:
+        presets = utils.get_user_presets(current_user.id)
+        return jsonify({'success': True, 'presets': presets})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error loading presets: {str(e)}'})
+
+@app.route('/api/presets/save', methods=['POST'])
+@login_required
+def api_save_preset():
+    """Save current configuration as a preset for current user"""
+    try:
+        data = request.json
+        preset_name = data.get('name', '').strip()
+        display_name = data.get('display_name', '').strip()
+        description = data.get('description', '').strip()
+
+        if not preset_name:
+            return jsonify({'success': False, 'message': 'Preset name is required'})
+
+        # Get current configuration
+        current_config = utils.load_user_config(current_user.id)
+
+        # Save the preset
+        success = utils.save_user_preset(current_user.id, preset_name, current_config, display_name, description)
+
+        if success:
+            return jsonify({'success': True, 'message': f'Preset "{display_name or preset_name}" saved successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to save preset'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error saving preset: {str(e)}'})
+
+@app.route('/api/presets/load/<preset_name>')
+@login_required
+def api_load_preset(preset_name):
+    """Load a specific preset configuration for current user"""
+    try:
+        preset_data = utils.load_user_preset(current_user.id, preset_name)
+        if preset_data:
+            return jsonify({'success': True, 'preset': preset_data})
+        else:
+            return jsonify({'success': False, 'message': 'Preset not found'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error loading preset: {str(e)}'})
+
+@app.route('/api/presets/apply/<preset_name>', methods=['POST'])
+@login_required
+def api_apply_preset(preset_name):
+    """Apply a preset as the current configuration for current user"""
+    try:
+        # Load the preset
+        preset_data = utils.load_user_preset(current_user.id, preset_name)
+        if not preset_data:
+            return jsonify({'success': False, 'message': 'Preset not found'})
+
+        # Apply the preset config
+        config = preset_data.get('config', {})
+        success = utils.save_user_config(current_user.id, config)
+
+        if success:
+            display_name = preset_data.get('display_name', preset_name)
+            return jsonify({'success': True, 'message': f'Applied preset "{display_name}" successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to apply preset'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error applying preset: {str(e)}'})
+
+@app.route('/api/presets/delete/<preset_name>', methods=['POST'])
+@login_required
+def api_delete_preset(preset_name):
+    """Delete a preset for current user"""
+    try:
+        # Get preset info before deleting for display name
+        preset_data = utils.load_user_preset(current_user.id, preset_name)
+        display_name = preset_data.get('display_name', preset_name) if preset_data else preset_name
+
+        success = utils.delete_user_preset(current_user.id, preset_name)
+        if success:
+            return jsonify({'success': True, 'message': f'Deleted preset "{display_name}" successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Preset not found'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error deleting preset: {str(e)}'})
+
+@app.route('/api/presets/delete-all', methods=['POST'])
+@login_required
+def api_delete_all_presets():
+    """Delete all presets for current user"""
+    try:
+        # Get all presets first
+        presets = utils.get_user_presets(current_user.id)
+        deleted_count = 0
+
+        # Delete each preset
+        for preset in presets:
+            if utils.delete_user_preset(current_user.id, preset['preset_name']):
+                deleted_count += 1
+
+        return jsonify({'success': True, 'message': f'Deleted {deleted_count} presets successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error deleting presets: {str(e)}'})
+
+@app.route('/api/presets/create-defaults', methods=['POST'])
+@login_required
+def api_create_default_presets():
+    """Create default presets for current user"""
+    try:
+        # Create a few default presets
+        default_presets = [
+            {
+                'name': 'entry_level',
+                'display_name': 'Entry Level Search',
+                'description': 'Optimized for entry-level positions',
+                'config': {
+                    'search_parameters': {
+                        'keywords': ['entry level software engineer', 'junior developer', 'associate engineer'],
+                        'locations': ['Remote', 'United States'],
+                        'exclusion_keywords': ['senior', 'sr.', 'lead', 'principal', 'staff', 'manager'],
+                        'experience_level': 'entry',
+                        'job_type': 'full-time',
+                        'max_jobs_per_search': 50
+                    },
+                    'prompts': {
+                        'evaluation_prompt': utils.get_default_config()['prompts']['evaluation_prompt']
+                    },
+                    'api_keys': utils.load_user_config(current_user.id).get('api_keys', {}),
+                    'general': utils.get_default_config()['general'],
+                    'resume': {'text': ''}
+                }
+            }
+        ]
+
+        created_count = 0
+        for preset in default_presets:
+            if utils.save_user_preset(current_user.id, preset['name'], preset['config'], preset['display_name'], preset['description']):
+                created_count += 1
+
+        return jsonify({'success': True, 'message': f'Created {created_count} default presets'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error creating default presets: {str(e)}'})
+
 @app.route('/job/<int:job_id>')
 @login_required
 def job_detail(job_id):
