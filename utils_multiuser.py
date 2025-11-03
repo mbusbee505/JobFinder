@@ -136,6 +136,22 @@ def get_default_config():
             'job_type': 'full-time',
             'max_jobs_per_search': 50
         },
+        'prompts': {
+            'evaluation_prompt': """Please evaluate this job posting based on the following criteria:
+
+MUST-HAVE Criteria (job must meet ALL of these):
+- Must NOT require any security clearance
+- Must be a full-time position
+
+FLEXIBLE Criteria (job should ideally meet these, but can be flexible):
+- Technical requirements can be offset by certifications, education, or demonstrated learning ability
+- Tool-specific experience can often be learned on the job
+
+Do NOT reject the job solely for:
+- Asking for 1-2 years of experience
+- Requiring specific tools experience
+- Listing certifications as requirements (unless explicitly marked as "must have before starting")"""
+        },
         'api_keys': {
             'openai_api_key': '',
             'linkedin_email': '',
@@ -144,7 +160,8 @@ def get_default_config():
         'general': {
             'scan_interval_minutes': 60,
             'auto_approve_threshold': 0.7,
-            'enable_notifications': False
+            'enable_notifications': False,
+            'ai_provider': 'openai'
         }
     }
 

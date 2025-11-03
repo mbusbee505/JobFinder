@@ -10,8 +10,7 @@ import os
 
 # Import our modules
 import database_multiuser as database
-import utils
-from config import load, save_config, get_available_presets, save_preset, load_preset, apply_preset, delete_preset, create_default_presets
+import utils_multiuser as utils
 from auth import User, init_auth_db
 
 app = Flask(__name__)
