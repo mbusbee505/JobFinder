@@ -101,9 +101,14 @@ def load(path: Path = CONFIG_FILE_PATH) -> dict:
     return loaded_config
 
 def get_user_config(user_id: int) -> dict:
-    """Get configuration for a specific user. Currently loads from default config.toml."""
-    # For now, all users share the same config. In future, could support per-user configs.
-    return load()
+    """Get configuration for a specific user from the database."""
+    try:
+        # Import here to avoid circular dependency
+        from utils_multiuser import load_user_config
+        return load_user_config(user_id)
+    except Exception as e:
+        print(f"Error loading user config from database: {e}. Falling back to config.toml")
+        return load()
 
 
 # Preset Configuration Management Functions
