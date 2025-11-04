@@ -4,12 +4,18 @@ import os
 import sys
 import subprocess
 import json
+import threading
 from datetime import datetime
 from pathlib import Path
 import database_multiuser as database
 
 # Database path
 DB_PATH = "jobfinder.db"
+
+# Global scan thread management - keyed by user_id
+_user_scan_threads = {}
+_user_scan_stop_signals = {}
+_scan_lock = threading.Lock()
 
 def ensure_database_initialized():
     """Ensure the database exists and is properly initialized"""
@@ -20,6 +26,22 @@ def ensure_database_initialized():
         init_auth_db()
     else:
         print("Database found.")
+
+    # Reset all scan flags on startup since threads don't persist across restarts
+    reset_all_scan_flags()
+
+
+def reset_all_scan_flags():
+    """Reset all scan control flags on app startup"""
+    try:
+        with database.get_conn() as conn:
+            conn.execute("""
+                UPDATE user_scan_control
+                SET scan_active = FALSE, stop_scan_flag = FALSE
+            """)
+        print("✅ Reset scan control flags for all users")
+    except Exception as e:
+        print(f"Warning: Could not reset scan flags: {e}")
 
 def get_project_info():
     """Get project information for display"""
@@ -33,33 +55,69 @@ def get_project_info():
 
 def start_scan_for_user(user_id):
     """Start scanning process for a specific user"""
-    try:
+    global _user_scan_threads, _user_scan_stop_signals
+
+    with _scan_lock:
         # Check if scan is already active
-        if database.is_scan_active(user_id):
+        if user_id in _user_scan_threads and _user_scan_threads[user_id].is_alive():
             return False, "Scan is already running"
 
-        # Set scan as active
-        database.set_scan_active(user_id, True)
-        database.set_stop_scan_flag(user_id, False)
+        # Initialize stop signal for this user
+        _user_scan_stop_signals[user_id] = [False]
 
-        # TODO: Implement actual scanning logic with user context
-        # This would typically start a background job or process
-        # For now, we'll just set the flags
+        try:
+            # Reset stop flag and set scan as active in database
+            database.set_stop_scan_flag(user_id, False)
+            database.set_scan_active(user_id, True)
 
-        return True, "Scan started successfully"
-    except Exception as e:
-        return False, f"Error starting scan: {str(e)}"
+            # Import scraping function
+            from scrape_multiuser import scrape_phase_for_user
+
+            def scan_worker():
+                try:
+                    scrape_phase_for_user(user_id, _user_scan_stop_signals[user_id])
+                except Exception as e:
+                    print(f"Error during scan for user {user_id}: {e}")
+                finally:
+                    # Reset stop signal and scan status when scan completes
+                    _user_scan_stop_signals[user_id][0] = False
+                    database.set_stop_scan_flag(user_id, False)
+                    database.set_scan_active(user_id, False)
+
+            # Start the scan thread
+            _user_scan_threads[user_id] = threading.Thread(target=scan_worker, daemon=True)
+            _user_scan_threads[user_id].start()
+
+            return True, "Scan started successfully"
+
+        except ImportError:
+            # Fallback: scrape_multiuser.py doesn't exist, so scan won't work
+            database.set_scan_active(user_id, False)
+            return False, "Scan module not available. Multi-user scanning not implemented."
+        except Exception as e:
+            database.set_scan_active(user_id, False)
+            return False, f"Error starting scan: {str(e)}"
 
 def stop_scan_for_user(user_id):
     """Stop scanning process for a specific user"""
-    try:
-        # Set stop flag
-        database.set_stop_scan_flag(user_id, True)
-        database.set_scan_active(user_id, False)
+    global _user_scan_stop_signals
 
-        return True, "Scan stopped successfully"
-    except Exception as e:
-        return False, f"Error stopping scan: {str(e)}"
+    with _scan_lock:
+        # Check if scan thread exists
+        if user_id not in _user_scan_threads or not _user_scan_threads[user_id].is_alive():
+            return False, "No scan is currently running"
+
+        try:
+            # Set stop signals
+            if user_id in _user_scan_stop_signals:
+                _user_scan_stop_signals[user_id][0] = True
+
+            database.set_stop_scan_flag(user_id, True)
+            database.set_scan_active(user_id, False)
+
+            return True, "Scan stop signal sent"
+        except Exception as e:
+            return False, f"Error stopping scan: {str(e)}"
 
 def load_user_config(user_id):
     """Load configuration for a specific user"""
@@ -240,40 +298,3 @@ def delete_user_preset(user_id, preset_name):
         print(f"Error deleting user preset: {e}")
         return False
 
-# Wrapper functions for compatibility with scan/scrape/evaluate modules
-def start_scan_for_user(user_id):
-    """Start the scanning process for a specific user"""
-    try:
-        if database.is_scan_active(user_id):
-            return False, "Scan is already active"
-
-        # Reset stop flag and set scan as active
-        database.set_stop_scan_flag(user_id, False)
-        database.set_scan_active(user_id, True)
-
-        # Load user configuration
-        config = load_user_config(user_id)
-
-        # TODO: Start actual scanning process with user context
-        # This would typically launch a subprocess or background job
-        # that runs scrape.py with user-specific parameters
-
-        return True, "Scan started successfully"
-
-    except Exception as e:
-        database.set_scan_active(user_id, False)
-        return False, f"Error starting scan: {str(e)}"
-
-def stop_scan_for_user(user_id):
-    """Stop the scanning process for a specific user"""
-    try:
-        database.set_stop_scan_flag(user_id, True)
-        database.set_scan_active(user_id, False)
-        return True, "Scan stop signal sent"
-
-    except Exception as e:
-        return False, f"Error stopping scan: {str(e)}"
-
-def get_scan_status(user_id):
-    """Get scan status for compatibility"""
-    return database.get_scan_status(user_id)

@@ -341,6 +341,16 @@ def get_scan_status(user_id: int) -> Dict[str, Any]:
         }
 
 
+def get_user_job_count(user_id: int) -> int:
+    """Get the total count of discovered jobs for a specific user"""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) as count FROM discovered_jobs WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()
+        return row['count'] if row else 0
+
+
 # -- Utility functions --
 
 def get_unanalyzed_jobs(user_id: int) -> List[Tuple[int, str]]:

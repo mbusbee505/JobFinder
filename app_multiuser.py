@@ -43,6 +43,8 @@ def init_app():
     # Create new multi-user database
     database.init_multiuser_db()
     init_auth_db()
+    # Reset scan flags since threads don't persist across restarts
+    utils.reset_all_scan_flags()
     print("✅ Application initialized with multi-user support")
 
 # Authentication routes
