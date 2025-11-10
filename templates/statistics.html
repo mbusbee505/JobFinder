@@ -219,17 +219,34 @@
         <div class="col-lg-6">
             <div class="card chart-card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-send-check"></i> Applications by Keyword</h5>
+                    <h5 class="mb-0"><i class="bi bi-trophy-fill text-warning"></i> Top Converting Keywords</h5>
                 </div>
                 <div class="card-body">
-                    {% if statistics.applied_by_keyword %}
-                    <div style="position: relative; height: 300px;">
-                        <canvas id="appliedKeywordChart"></canvas>
+                    {% if statistics.conversion_by_keyword %}
+                    <div class="top-keywords-list">
+                        {% for item in statistics.conversion_by_keyword[:5] %}
+                        <div class="keyword-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong class="text-primary">{{ item.keyword }}</strong>
+                                    <small class="text-muted ms-2">{{ item.applied }} / {{ item.approved }}</small>
+                                </div>
+                                <span class="badge bg-success">{{ "%.0f"|format((item.applied / item.approved * 100) if item.approved > 0 else 0) }}%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: {{ (item.applied / item.approved * 100) if item.approved > 0 else 0 }}%"
+                                     aria-valuenow="{{ (item.applied / item.approved * 100) if item.approved > 0 else 0 }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                     {% else %}
                     <div class="text-center text-muted py-4">
-                        <i class="bi bi-inbox display-4"></i>
-                        <p class="mt-3">No applications yet</p>
+                        <i class="bi bi-tag display-4"></i>
+                        <p class="mt-3">No keyword data available yet</p>
                     </div>
                     {% endif %}
                 </div>
@@ -399,36 +416,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         padding: 10,
                         font: { size: 11 }
                     }
-                }
-            }
-        }
-    });
-    {% endif %}
-
-    // Applied Jobs by Keyword
-    {% if statistics.applied_by_keyword %}
-    const appliedKeywordCtx = document.getElementById('appliedKeywordChart').getContext('2d');
-    const appliedKeywordData = {{ statistics.applied_by_keyword | tojson }};
-
-    new Chart(appliedKeywordCtx, {
-        type: 'bar',
-        data: {
-            labels: appliedKeywordData.map(item => item.keyword),
-            datasets: [{
-                label: 'Applications',
-                data: appliedKeywordData.map(item => item.count),
-                backgroundColor: '#10b981',
-                borderColor: '#059669',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            ...commonOptions,
-            indexAxis: 'y',
-            plugins: {
-                ...commonOptions.plugins,
-                legend: {
-                    display: false
                 }
             }
         }
@@ -623,6 +610,28 @@ document.addEventListener('DOMContentLoaded', function() {
 .chart-card .card-header {
     padding: 1rem 1.25rem;
     font-weight: 600;
+}
+
+/* Top Keywords List */
+.top-keywords-list {
+    padding: 1rem;
+}
+
+.keyword-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--gray-50);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.keyword-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateX(4px);
+}
+
+.keyword-item:last-child {
+    margin-bottom: 0;
 }
 
 /* Utility Classes */
