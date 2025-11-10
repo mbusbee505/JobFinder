@@ -447,12 +447,107 @@ def get_job_statistics(user_id: int) -> Dict[str, Any]:
                 ORDER BY date DESC
             """, (user_id,)).fetchall()
 
+            # Application activity (last 30 days)
+            application_activity = conn.execute("""
+                SELECT
+                    DATE(date_applied) as date,
+                    COUNT(*) as applied_count
+                FROM approved_jobs
+                WHERE user_id = ? AND date_applied IS NOT NULL
+                  AND date_applied >= datetime('now', '-30 days')
+                GROUP BY DATE(date_applied)
+                ORDER BY date DESC
+            """, (user_id,)).fetchall()
+
+            # Applied jobs breakdown by location
+            applied_by_location = conn.execute("""
+                SELECT d.location, COUNT(*) as count
+                FROM approved_jobs a
+                JOIN discovered_jobs d ON a.discovered_job_id = d.id
+                WHERE a.user_id = ? AND a.date_applied IS NOT NULL
+                GROUP BY d.location
+                ORDER BY count DESC
+                LIMIT 10
+            """, (user_id,)).fetchall()
+
+            # Applied jobs breakdown by keyword
+            applied_by_keyword = conn.execute("""
+                SELECT d.keyword, COUNT(*) as count
+                FROM approved_jobs a
+                JOIN discovered_jobs d ON a.discovered_job_id = d.id
+                WHERE a.user_id = ? AND a.date_applied IS NOT NULL
+                GROUP BY d.keyword
+                ORDER BY count DESC
+                LIMIT 10
+            """, (user_id,)).fetchall()
+
+            # Approved jobs breakdown by location
+            approved_by_location = conn.execute("""
+                SELECT d.location, COUNT(*) as count
+                FROM approved_jobs a
+                JOIN discovered_jobs d ON a.discovered_job_id = d.id
+                WHERE a.user_id = ?
+                GROUP BY d.location
+                ORDER BY count DESC
+                LIMIT 10
+            """, (user_id,)).fetchall()
+
+            # Approved jobs breakdown by keyword
+            approved_by_keyword = conn.execute("""
+                SELECT d.keyword, COUNT(*) as count
+                FROM approved_jobs a
+                JOIN discovered_jobs d ON a.discovered_job_id = d.id
+                WHERE a.user_id = ?
+                GROUP BY d.keyword
+                ORDER BY count DESC
+                LIMIT 10
+            """, (user_id,)).fetchall()
+
+            # Conversion rates by location
+            conversion_by_location = conn.execute("""
+                SELECT
+                    d.location,
+                    COUNT(DISTINCT d.id) as discovered,
+                    COUNT(DISTINCT CASE WHEN a.id IS NOT NULL THEN a.id END) as approved,
+                    COUNT(DISTINCT CASE WHEN a.date_applied IS NOT NULL THEN a.id END) as applied
+                FROM discovered_jobs d
+                LEFT JOIN approved_jobs a ON d.id = a.discovered_job_id AND a.user_id = ?
+                WHERE d.user_id = ?
+                GROUP BY d.location
+                HAVING COUNT(DISTINCT d.id) > 0
+                ORDER BY discovered DESC
+                LIMIT 10
+            """, (user_id, user_id)).fetchall()
+
+            # Conversion rates by keyword
+            conversion_by_keyword = conn.execute("""
+                SELECT
+                    d.keyword,
+                    COUNT(DISTINCT d.id) as discovered,
+                    COUNT(DISTINCT CASE WHEN a.id IS NOT NULL THEN a.id END) as approved,
+                    COUNT(DISTINCT CASE WHEN a.date_applied IS NOT NULL THEN a.id END) as applied
+                FROM discovered_jobs d
+                LEFT JOIN approved_jobs a ON d.id = a.discovered_job_id AND a.user_id = ?
+                WHERE d.user_id = ?
+                GROUP BY d.keyword
+                HAVING COUNT(DISTINCT d.id) > 0
+                ORDER BY discovered DESC
+                LIMIT 10
+            """, (user_id, user_id)).fetchall()
+
             return {
                 'basic': dict(basic_stats),
                 'approved': dict(approved_stats),
                 'by_location': [dict(row) for row in location_stats],
                 'by_keyword': [dict(row) for row in keyword_stats],
-                'recent_activity': [dict(row) for row in recent_activity]
+                'recent_activity': [dict(row) for row in recent_activity],
+                'application_activity': [dict(row) for row in application_activity],
+                'applied_by_location': [dict(row) for row in applied_by_location],
+                'applied_by_keyword': [dict(row) for row in applied_by_keyword],
+                'approved_by_location': [dict(row) for row in approved_by_location],
+                'approved_by_keyword': [dict(row) for row in approved_by_keyword],
+                'conversion_by_location': [dict(row) for row in conversion_by_location],
+                'conversion_by_keyword': [dict(row) for row in conversion_by_keyword]
             }
     except Exception as e:
         print(f"Error getting job statistics: {e}")
@@ -461,7 +556,14 @@ def get_job_statistics(user_id: int) -> Dict[str, Any]:
             'approved': {'total_approved': 0, 'total_applied': 0, 'total_archived': 0},
             'by_location': [],
             'by_keyword': [],
-            'recent_activity': []
+            'recent_activity': [],
+            'application_activity': [],
+            'applied_by_location': [],
+            'applied_by_keyword': [],
+            'approved_by_location': [],
+            'approved_by_keyword': [],
+            'conversion_by_location': [],
+            'conversion_by_keyword': []
         }
 
 
