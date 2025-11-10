@@ -17,35 +17,10 @@
     <div class="card mb-6 border-0 shadow-sm">
         <div class="card-header bg-white border-bottom">
             <h5 class="mb-0"><i class="bi bi-funnel-fill text-primary"></i> Application Funnel</h5>
+            <p class="mb-0 mt-1 small text-muted">From {{ statistics.basic.total_discovered }} discovered jobs</p>
         </div>
         <div class="card-body p-4">
             <div class="funnel-horizontal">
-                <!-- Discovered Stage -->
-                <div class="funnel-row">
-                    <div class="funnel-stage-label">
-                        <div class="stage-icon discovered">
-                            <i class="bi bi-search"></i>
-                        </div>
-                        <div class="stage-info">
-                            <div class="stage-title">Discovered</div>
-                            <div class="stage-subtitle">Jobs found via search</div>
-                        </div>
-                    </div>
-                    <div class="funnel-stage-bar">
-                        <div class="bar-track">
-                            <div class="bar-fill discovered" style="width: 100%">
-                                <span class="bar-value">{{ statistics.basic.total_discovered }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="funnel-stage-percent">100%</div>
-                </div>
-
-                <!-- Arrow -->
-                <div class="funnel-arrow">
-                    <i class="bi bi-arrow-down"></i>
-                </div>
-
                 <!-- Approved Stage -->
                 <div class="funnel-row">
                     <div class="funnel-stage-label">
@@ -59,18 +34,12 @@
                     </div>
                     <div class="funnel-stage-bar">
                         <div class="bar-track">
-                            <div class="bar-fill approved" style="width: {% if statistics.basic.total_discovered > 0 %}{{ (statistics.approved.total_approved / statistics.basic.total_discovered * 100) }}%{% else %}0%{% endif %}">
+                            <div class="bar-fill approved" style="width: 100%">
                                 <span class="bar-value">{{ statistics.approved.total_approved }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="funnel-stage-percent">
-                        {% if statistics.basic.total_discovered > 0 %}
-                            {{ "%.1f"|format((statistics.approved.total_approved / statistics.basic.total_discovered * 100)) }}%
-                        {% else %}
-                            0%
-                        {% endif %}
-                    </div>
+                    <div class="funnel-stage-percent">100%</div>
                 </div>
 
                 <!-- Arrow -->
