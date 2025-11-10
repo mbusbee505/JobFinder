@@ -276,15 +276,12 @@ document.getElementById('config-form').addEventListener('submit', async function
 
         hideLoading();
 
-        if (result.success) {
-            showAlert('Configuration saved successfully!', 'success');
-        } else {
-            showAlert(result.message || 'Error saving configuration', 'error');
+        if (!result.success) {
+            console.error('Error saving configuration:', result.message);
         }
     } catch (error) {
         console.error('Error saving configuration:', error);
         hideLoading();
-        showAlert('Error saving configuration: ' + error.message, 'error');
     }
 });
 
@@ -343,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const description = document.getElementById('preset-description').value.trim();
 
             if (!presetName) {
-                showAlert('Preset name is required', 'error');
+                console.error('Preset name is required');
                 return;
             }
 
@@ -363,15 +360,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(result.message, 'success');
                     savePresetForm.reset();
-                    // Reload page to show new preset
-                    setTimeout(() => window.location.reload(), 1000);
+                    setTimeout(() => window.location.reload(), 500);
                 } else {
-                    showAlert(result.message, 'error');
+                    console.error('Error saving preset:', result.message);
                 }
             } catch (error) {
-                showAlert('Error saving preset: ' + error.message, 'error');
+                console.error('Error saving preset:', error.message);
             }
         });
     }
@@ -394,14 +389,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(result.message, 'success');
-                    // Reload page to show new configuration
-                    setTimeout(() => window.location.reload(), 1000);
+                    setTimeout(() => window.location.reload(), 500);
                 } else {
-                    showAlert(result.message, 'error');
+                    console.error('Error applying preset:', result.message);
                 }
             } catch (error) {
-                showAlert('Error applying preset: ' + error.message, 'error');
+                console.error('Error applying preset:', error.message);
             }
         });
     });
@@ -425,7 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(result.message, 'success');
                     // Remove the preset card from DOM
                     const presetCard = this.closest('.preset-card').parentElement;
                     presetCard.remove();
@@ -436,10 +428,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         presetsContainer.innerHTML = '<div class="col-12"><p class="text-muted">No presets available. Create your first preset below!</p></div>';
                     }
                 } else {
-                    showAlert(result.message, 'error');
+                    console.error('Error deleting preset:', result.message);
                 }
             } catch (error) {
-                showAlert('Error deleting preset: ' + error.message, 'error');
+                console.error('Error deleting preset:', error.message);
             }
         });
     });
@@ -458,7 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (result.success) {
-                showAlert(result.message, 'success');
                 // Clear the presets container and show empty state
                 const presetsContainer = document.getElementById('presets-container');
                 presetsContainer.innerHTML = `
@@ -479,10 +470,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     deleteAllBtn.style.display = 'none';
                 }
             } else {
-                showAlert(result.message, 'error');
+                console.error('Error deleting all presets:', result.message);
             }
         } catch (error) {
-            showAlert('Error deleting all presets: ' + error.message, 'error');
+            console.error('Error deleting all presets:', error.message);
         }
     };
 
@@ -496,14 +487,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (result.success) {
-                showAlert(result.message, 'success');
-                // Reload page to show new presets
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.reload(), 500);
             } else {
-                showAlert(result.message, 'error');
+                console.error('Error creating default presets:', result.message);
             }
         } catch (error) {
-            showAlert('Error creating default presets: ' + error.message, 'error');
+            console.error('Error creating default presets:', error.message);
         }
     };
 });

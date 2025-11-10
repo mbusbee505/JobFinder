@@ -152,11 +152,9 @@ async function markApplied(approvedId) {
             // Add success animation
             row.style.background = 'rgba(16, 185, 129, 0.1)';
             setTimeout(() => location.reload(), 800);
-        } else {
-            showNotification(result.message, 'error');
         }
     } catch (error) {
-        showNotification('Error marking job as applied', 'error');
+        console.error('Error marking job as applied', error);
     } finally {
         hideLoading();
     }
@@ -174,11 +172,9 @@ async function deleteJob(approvedId) {
             row.style.transform = 'translateX(100%)';
             row.style.opacity = '0';
             setTimeout(() => row.remove(), 300);
-        } else {
-            showNotification(result.message, 'error');
         }
     } catch (error) {
-        showNotification('Error removing job', 'error');
+        console.error('Error removing job', error);
     }
 }
 
@@ -191,13 +187,10 @@ async function archiveApplied() {
         const result = await response.json();
 
         if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showNotification(result.message, 'error');
+            setTimeout(() => location.reload(), 500);
         }
     } catch (error) {
-        showNotification('Error archiving jobs', 'error');
+        console.error('Error archiving jobs', error);
     } finally {
         hideLoading();
     }
@@ -212,13 +205,10 @@ async function clearApproved() {
         const result = await response.json();
 
         if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showNotification(result.message, 'error');
+            setTimeout(() => location.reload(), 500);
         }
     } catch (error) {
-        showNotification('Error clearing jobs', 'error');
+        console.error('Error clearing jobs', error);
     } finally {
         hideLoading();
     }

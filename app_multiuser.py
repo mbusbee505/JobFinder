@@ -1,5 +1,5 @@
 # app_multiuser.py - Multi-user Flask application with authentication
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from functools import wraps
 import sqlite3
@@ -7,6 +7,10 @@ from datetime import datetime
 import json
 import traceback
 import os
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 
 # Import our modules
 import database_multiuser as database
@@ -552,6 +556,145 @@ def archived_page():
     except Exception as e:
         flash(f'Error loading applied jobs: {str(e)}', 'error')
         return render_template('archived.html', jobs=[], scan_status=database.get_scan_status(current_user.id))
+
+@app.route('/api/applied/export')
+@login_required
+def export_applied_jobs():
+    """Export applied jobs to Excel spreadsheet"""
+    try:
+        # Get applied jobs for current user
+        archived_jobs = database.get_archived_jobs(current_user.id)
+
+        if not archived_jobs:
+            flash('No applied jobs to export', 'info')
+            return redirect(url_for('archived_page'))
+
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Applied Jobs"
+
+        # Define styles
+        header_fill = PatternFill(start_color="F97316", end_color="F97316", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell_alignment = Alignment(vertical="top", wrap_text=True)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Define headers
+        headers = [
+            "Job Title",
+            "Company/Position",
+            "Location",
+            "Keyword Match",
+            "LinkedIn URL",
+            "Date Applied",
+            "Date Approved",
+            "AI Match Reasoning",
+            "Job Description"
+        ]
+
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+            cell.border = border
+
+        # Set column widths
+        column_widths = {
+            'A': 30,  # Job Title
+            'B': 25,  # Company
+            'C': 20,  # Location
+            'D': 20,  # Keyword
+            'E': 50,  # LinkedIn URL
+            'F': 15,  # Date Applied
+            'G': 15,  # Date Approved
+            'H': 60,  # AI Reasoning
+            'I': 70   # Description
+        }
+
+        for col_letter, width in column_widths.items():
+            ws.column_dimensions[col_letter].width = width
+
+        # Write data rows
+        for row_num, job in enumerate(archived_jobs, 2):
+            # Format dates
+            date_applied = ''
+            if job['date_applied']:
+                try:
+                    dt = datetime.fromisoformat(job['date_applied'].replace('Z', '+00:00'))
+                    date_applied = dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    date_applied = str(job['date_applied'])
+
+            date_approved = ''
+            if job['date_approved']:
+                try:
+                    dt = datetime.fromisoformat(job['date_approved'].replace('Z', '+00:00'))
+                    date_approved = dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    date_approved = str(job['date_approved'])
+
+            # Prepare row data
+            row_data = [
+                job.get('title') or 'Untitled Position',
+                job.get('title') or 'N/A',  # Company - using title as fallback
+                job.get('location') or 'N/A',
+                job.get('keyword') or 'N/A',
+                job.get('url') or 'N/A',
+                date_applied,
+                date_approved,
+                job.get('reason') or 'No reasoning provided',
+                job.get('description') or 'No description available'
+            ]
+
+            # Write row
+            for col_num, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = value
+                cell.alignment = cell_alignment
+                cell.border = border
+
+                # Make URL a hyperlink
+                if col_num == 5 and value and value != 'N/A':
+                    cell.hyperlink = value
+                    cell.font = Font(color="0563C1", underline="single")
+
+        # Freeze first row
+        ws.freeze_panes = "A2"
+
+        # Set row height for header
+        ws.row_dimensions[1].height = 30
+
+        # Save to BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'applied_jobs_{timestamp}.xlsx'
+
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        print(f"Error exporting applied jobs: {str(e)}")
+        print(traceback.format_exc())
+        flash(f'Error exporting jobs: {str(e)}', 'error')
+        return redirect(url_for('archived_page'))
 
 @app.route('/logs')
 @login_required

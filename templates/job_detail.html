@@ -182,13 +182,10 @@ async function markApplied(approvedId) {
         const result = await response.json();
 
         if (result.success) {
-            showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showAlert(result.message, 'error');
+            setTimeout(() => location.reload(), 500);
         }
     } catch (error) {
-        showAlert('Error marking job as applied', 'error');
+        console.error('Error marking job as applied', error);
     } finally {
         hideLoading();
     }
@@ -204,11 +201,9 @@ async function deleteJob(approvedId) {
 
         if (result.success) {
             window.location.href = '{{ url_for("dashboard") }}';
-        } else {
-            showAlert(result.message, 'error');
         }
     } catch (error) {
-        showAlert('Error deleting job', 'error');
+        console.error('Error deleting job', error);
     } finally {
         hideLoading();
     }
@@ -216,9 +211,9 @@ async function deleteJob(approvedId) {
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showAlert('URL copied to clipboard', 'success');
+        console.log('URL copied to clipboard');
     }).catch(() => {
-        showAlert('Failed to copy URL', 'error');
+        console.error('Failed to copy URL');
     });
 }
 

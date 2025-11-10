@@ -250,14 +250,12 @@ async function clearDiscovered() {
         const result = await response.json();
 
         if (result.success) {
-            showNotification('🎉 ' + result.message, 'success');
-            // Refresh the page after a brief delay
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), 500);
         } else {
-            showNotification(result.message, 'error');
+            console.error('Error clearing discovered jobs:', result.message);
         }
     } catch (error) {
-        showNotification('Error clearing discovered jobs: ' + error.message, 'error');
+        console.error('Error clearing discovered jobs:', error.message);
     }
 }
 
