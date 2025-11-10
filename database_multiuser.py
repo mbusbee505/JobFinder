@@ -405,7 +405,7 @@ def get_archived_jobs(user_id: int) -> List[Dict[str, Any]]:
         d.description
     FROM approved_jobs a
     JOIN discovered_jobs d ON a.discovered_job_id = d.id
-    WHERE a.user_id = ? AND a.is_archived = TRUE
+    WHERE a.user_id = ? AND a.is_archived = TRUE AND (a.is_dismissed IS NULL OR a.is_dismissed = FALSE)
     ORDER BY a.date_applied DESC
     """
     with get_conn() as conn:
