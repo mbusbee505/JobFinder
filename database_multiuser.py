@@ -221,14 +221,18 @@ def mark_job_as_applied(user_id: int, approved_job_pk: int) -> bool:
 
 
 def delete_approved_job(user_id: int, approved_job_pk: int) -> bool:
-    """Delete an approved job for a specific user"""
-    sql = "DELETE FROM approved_jobs WHERE user_id = ? AND id = ?;"
+    """Archive an approved job for a specific user (soft delete)"""
+    sql = """
+    UPDATE approved_jobs
+    SET is_archived = TRUE
+    WHERE user_id = ? AND id = ?;
+    """
     try:
         with get_conn() as conn:
             cursor = conn.execute(sql, (user_id, approved_job_pk))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Error deleting approved job: {e}")
+        print(f"Error archiving approved job: {e}")
         return False
 
 
