@@ -203,8 +203,7 @@ async function deleteJob(approvedId) {
         const result = await response.json();
 
         if (result.success) {
-            showAlert('Job deleted successfully', 'success');
-            setTimeout(() => window.location.href = '{{ url_for("dashboard") }}', 1000);
+            window.location.href = '{{ url_for("dashboard") }}';
         } else {
             showAlert(result.message, 'error');
         }

@@ -15,9 +15,12 @@
     <!-- Jobs Table -->
     {% if jobs %}
     <div class="card slide-up">
-        <div class="card-header">
-            <i class="bi bi-list-check"></i>
-            <h5>Approved Job Opportunities</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-list-check"></i>
+                <h5 class="d-inline">Approved Job Opportunities</h5>
+            </div>
+            <span class="badge bg-primary fs-6">{{ jobs|length }} job{{ 's' if jobs|length != 1 else '' }}</span>
         </div>
         <div class="card-body p-0">
             <div class="table-container">
@@ -171,7 +174,6 @@ async function deleteJob(approvedId) {
             row.style.transform = 'translateX(100%)';
             row.style.opacity = '0';
             setTimeout(() => row.remove(), 300);
-            showNotification('Job removed successfully', 'success');
         } else {
             showNotification(result.message, 'error');
         }
