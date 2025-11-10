@@ -162,11 +162,11 @@
                                     </td>
                                     <td class="text-center">
                                         {{ item.applied }}
-                                        <small class="text-muted">({{ "%.0f"|format((item.applied / item.discovered * 100) if item.discovered > 0 else 0) }}%)</small>
+                                        <small class="text-muted">({{ "%.0f"|format((item.applied / item.approved * 100) if item.approved > 0 else 0) }}%)</small>
                                     </td>
                                     <td class="text-center">
                                         <div class="mini-progress">
-                                            <div class="mini-progress-bar" style="width: {{ (item.applied / item.discovered * 100) if item.discovered > 0 else 0 }}%"></div>
+                                            <div class="mini-progress-bar" style="width: {{ (item.applied / item.approved * 100) if item.approved > 0 else 0 }}%"></div>
                                         </div>
                                     </td>
                                 </tr>
@@ -213,11 +213,11 @@
                                     </td>
                                     <td class="text-center">
                                         {{ item.applied }}
-                                        <small class="text-muted">({{ "%.0f"|format((item.applied / item.discovered * 100) if item.discovered > 0 else 0) }}%)</small>
+                                        <small class="text-muted">({{ "%.0f"|format((item.applied / item.approved * 100) if item.approved > 0 else 0) }}%)</small>
                                     </td>
                                     <td class="text-center">
                                         <div class="mini-progress">
-                                            <div class="mini-progress-bar" style="width: {{ (item.applied / item.discovered * 100) if item.discovered > 0 else 0 }}%"></div>
+                                            <div class="mini-progress-bar" style="width: {{ (item.applied / item.approved * 100) if item.approved > 0 else 0 }}%"></div>
                                         </div>
                                     </td>
                                 </tr>
