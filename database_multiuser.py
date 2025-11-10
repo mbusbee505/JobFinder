@@ -80,6 +80,7 @@ def init_multiuser_db() -> None:
                 date_approved TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 date_applied TIMESTAMP NULL,
                 is_archived BOOLEAN DEFAULT FALSE,
+                is_dismissed BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (discovered_job_id) REFERENCES discovered_jobs(id) ON DELETE CASCADE,
                 UNIQUE(user_id, discovered_job_id)
@@ -91,6 +92,13 @@ def init_multiuser_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_approved_jobs_user_id
             ON approved_jobs(user_id)
             """)
+
+            # Add is_dismissed column if it doesn't exist (migration)
+            try:
+                conn.execute("SELECT is_dismissed FROM approved_jobs LIMIT 1")
+            except sqlite3.OperationalError:
+                conn.execute("ALTER TABLE approved_jobs ADD COLUMN is_dismissed BOOLEAN DEFAULT FALSE")
+                print("✅ Added is_dismissed column to approved_jobs table")
 
             # Create user_configs table for per-user configuration
             conn.execute("""
@@ -221,10 +229,10 @@ def mark_job_as_applied(user_id: int, approved_job_pk: int) -> bool:
 
 
 def delete_approved_job(user_id: int, approved_job_pk: int) -> bool:
-    """Archive an approved job for a specific user (soft delete)"""
+    """Dismiss an approved job for a specific user (soft delete)"""
     sql = """
     UPDATE approved_jobs
-    SET is_archived = TRUE
+    SET is_dismissed = TRUE
     WHERE user_id = ? AND id = ?;
     """
     try:
@@ -232,7 +240,7 @@ def delete_approved_job(user_id: int, approved_job_pk: int) -> bool:
             cursor = conn.execute(sql, (user_id, approved_job_pk))
             return cursor.rowcount > 0
     except Exception as e:
-        print(f"Error archiving approved job: {e}")
+        print(f"Error dismissing approved job: {e}")
         return False
 
 
@@ -261,7 +269,7 @@ def archive_all_applied_jobs(user_id: int) -> int:
     sql = """
     UPDATE approved_jobs
     SET is_archived = TRUE
-    WHERE user_id = ? AND date_applied IS NOT NULL AND (is_archived IS NULL OR is_archived = FALSE);
+    WHERE user_id = ? AND date_applied IS NOT NULL AND (is_archived IS NULL OR is_archived = FALSE) AND (is_dismissed IS NULL OR is_dismissed = FALSE);
     """
     with get_conn() as conn:
         cursor = conn.execute(sql, (user_id,))
@@ -319,7 +327,7 @@ def get_scan_status(user_id: int) -> Dict[str, Any]:
             stats = conn.execute("""
                 SELECT
                     COUNT(*) as total_discovered,
-                    (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND (is_archived IS NULL OR is_archived = FALSE)) as total_approved,
+                    (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND (is_archived IS NULL OR is_archived = FALSE) AND (is_dismissed IS NULL OR is_dismissed = FALSE)) as total_approved,
                     (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND date_applied IS NOT NULL AND (is_archived IS NULL OR is_archived = FALSE)) as total_applied,
                     (SELECT COUNT(*) FROM discovered_jobs WHERE user_id = ? AND analyzed = TRUE) as total_analyzed
                 FROM discovered_jobs WHERE user_id = ?

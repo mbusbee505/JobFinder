@@ -206,7 +206,9 @@ def dashboard():
                 d.description
             FROM approved_jobs a
             JOIN discovered_jobs d ON a.discovered_job_id = d.id
-            WHERE a.user_id = ? AND (a.is_archived IS NULL OR a.is_archived = FALSE)
+            WHERE a.user_id = ?
+                AND (a.is_archived IS NULL OR a.is_archived = FALSE)
+                AND (a.is_dismissed IS NULL OR a.is_dismissed = FALSE)
             ORDER BY a.date_approved DESC
             """
             approved_jobs = conn.execute(query, (current_user.id,)).fetchall()
@@ -215,7 +217,7 @@ def dashboard():
             stats_query = """
             SELECT
                 COUNT(*) as total_discovered,
-                (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND (is_archived IS NULL OR is_archived = FALSE)) as total_approved,
+                (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND (is_archived IS NULL OR is_archived = FALSE) AND (is_dismissed IS NULL OR is_dismissed = FALSE)) as total_approved,
                 (SELECT COUNT(*) FROM approved_jobs WHERE user_id = ? AND date_applied IS NOT NULL AND (is_archived IS NULL OR is_archived = FALSE)) as total_applied,
                 (SELECT COUNT(*) FROM discovered_jobs WHERE user_id = ? AND analyzed = TRUE) as total_analyzed
             FROM discovered_jobs WHERE user_id = ?
