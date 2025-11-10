@@ -89,7 +89,6 @@
                     <thead>
                         <tr>
                             <th>Keyword</th>
-                            <th class="text-center">Discovered</th>
                             <th class="text-center">AI Approved</th>
                             <th class="text-center">You Applied</th>
                             <th class="text-center">Conversion</th>
@@ -99,15 +98,8 @@
                         {% for item in statistics.conversion_by_keyword %}
                         <tr>
                             <td><strong class="text-primary">{{ item.keyword }}</strong></td>
-                            <td class="text-center">{{ item.discovered }}</td>
-                            <td class="text-center">
-                                {{ item.approved }}
-                                <small class="text-muted">({{ "%.0f"|format((item.approved / item.discovered * 100) if item.discovered > 0 else 0) }}%)</small>
-                            </td>
-                            <td class="text-center">
-                                {{ item.applied }}
-                                <small class="text-muted">({{ "%.0f"|format((item.applied / item.approved * 100) if item.approved > 0 else 0) }}%)</small>
-                            </td>
+                            <td class="text-center">{{ item.approved }}</td>
+                            <td class="text-center">{{ item.applied }}</td>
                             <td class="text-center">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
                                     <div class="mini-progress">
@@ -165,7 +157,6 @@
                     <thead>
                         <tr>
                             <th>Location</th>
-                            <th class="text-center">Discovered</th>
                             <th class="text-center">AI Approved</th>
                             <th class="text-center">You Applied</th>
                             <th class="text-center">Conversion</th>
@@ -175,15 +166,8 @@
                         {% for item in statistics.conversion_by_location %}
                         <tr>
                             <td><strong>{{ item.location }}</strong></td>
-                            <td class="text-center">{{ item.discovered }}</td>
-                            <td class="text-center">
-                                {{ item.approved }}
-                                <small class="text-muted">({{ "%.0f"|format((item.approved / item.discovered * 100) if item.discovered > 0 else 0) }}%)</small>
-                            </td>
-                            <td class="text-center">
-                                {{ item.applied }}
-                                <small class="text-muted">({{ "%.0f"|format((item.applied / item.approved * 100) if item.approved > 0 else 0) }}%)</small>
-                            </td>
+                            <td class="text-center">{{ item.approved }}</td>
+                            <td class="text-center">{{ item.applied }}</td>
                             <td class="text-center">
                                 <div class="d-flex align-items-center justify-content-center gap-2">
                                     <div class="mini-progress">
