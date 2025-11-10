@@ -578,8 +578,9 @@ def export_applied_jobs():
 
         # Define styles
         header_fill = PatternFill(start_color="F97316", end_color="F97316", fill_type="solid")
-        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_font = Font(bold=True, color="FFFFFF", size=14)
         header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell_font = Font(size=14)
         cell_alignment = Alignment(vertical="top", wrap_text=True)
         border = Border(
             left=Side(style='thin'),
@@ -668,7 +669,9 @@ def export_applied_jobs():
                 # Make URL a hyperlink
                 if col_num == 5 and value and value != 'N/A':
                     cell.hyperlink = value
-                    cell.font = Font(color="0563C1", underline="single")
+                    cell.font = Font(color="0563C1", underline="single", size=14)
+                else:
+                    cell.font = cell_font
 
         # Freeze first row
         ws.freeze_panes = "A2"
