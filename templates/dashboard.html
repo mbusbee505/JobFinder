@@ -53,6 +53,11 @@
                                             View on LinkedIn
                                         </a>
                                     </div>
+                                    {% if job.description %}
+                                    <div class="job-description-preview text-sm text-gray-600 mt-2">
+                                        {{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td>

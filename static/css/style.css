@@ -187,6 +187,58 @@ body {
     }
 }
 
+/* Dark mode headers and page text - ensure consistent light colors */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] .display-5,
+[data-theme="dark"] p,
+[data-theme="dark"] .text-gray-900 {
+    color: var(--gray-900) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) h1,
+    :root:not([data-theme]) h2,
+    :root:not([data-theme]) h3,
+    :root:not([data-theme]) h4,
+    :root:not([data-theme]) h5,
+    :root:not([data-theme]) h6,
+    :root:not([data-theme]) .display-5,
+    :root:not([data-theme]) p,
+    :root:not([data-theme]) .text-gray-900 {
+        color: var(--gray-900) !important;
+    }
+}
+
+/* Dark mode card headers */
+[data-theme="dark"] .card-header {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+    color: var(--gray-900);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .card-header {
+        background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+        color: var(--gray-900);
+    }
+}
+
+[data-theme="dark"] .card-header h5,
+[data-theme="dark"] .card-header h6 {
+    color: var(--gray-900) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .card-header h5,
+    :root:not([data-theme]) .card-header h6 {
+        color: var(--gray-900) !important;
+    }
+}
+
 /* Dark mode job rows and cards - all screen sizes */
 [data-theme="dark"] .table tbody tr,
 [data-theme="dark"] .card {
@@ -279,11 +331,13 @@ body {
     }
 }
 
-/* Fix specific text elements in dark mode tables */
+/* Fix specific text elements in dark mode tables - ensure light colors */
 [data-theme="dark"] .table tbody td .text-sm,
 [data-theme="dark"] .table tbody td .text-muted,
 [data-theme="dark"] .table tbody td .text-gray-600,
-[data-theme="dark"] .table tbody td span {
+[data-theme="dark"] .table tbody td .text-gray-500,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-500 {
     color: var(--gray-600) !important;
 }
 
@@ -291,8 +345,35 @@ body {
     :root:not([data-theme]) .table tbody td .text-sm,
     :root:not([data-theme]) .table tbody td .text-muted,
     :root:not([data-theme]) .table tbody td .text-gray-600,
-    :root:not([data-theme]) .table tbody td span {
+    :root:not([data-theme]) .table tbody td .text-gray-500,
+    :root:not([data-theme]) .text-gray-600,
+    :root:not([data-theme]) .text-gray-500 {
         color: var(--gray-600) !important;
+    }
+}
+
+/* Ensure all links in dark mode are visible */
+[data-theme="dark"] .job-title-link,
+[data-theme="dark"] .hover-primary {
+    color: var(--gray-900) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .job-title-link,
+    :root:not([data-theme]) .hover-primary {
+        color: var(--gray-900) !important;
+    }
+}
+
+[data-theme="dark"] .job-title-link:hover,
+[data-theme="dark"] .hover-primary:hover {
+    color: var(--primary-light) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .job-title-link:hover,
+    :root:not([data-theme]) .hover-primary:hover {
+        color: var(--primary-light) !important;
     }
 }
 
@@ -316,6 +397,48 @@ body {
 
     [data-theme="dark"] .table tbody td {
         border-color: var(--gray-200) !important;
+    }
+
+    /* Mobile dark mode text colors - ensure everything is light */
+    [data-theme="dark"] .table tbody td::before {
+        color: var(--gray-600) !important;
+    }
+
+    [data-theme="dark"] .job-description-preview {
+        color: var(--gray-600) !important;
+        background: var(--bg-tertiary) !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    @media (max-width: 768px) {
+        :root:not([data-theme]) .table tbody tr {
+            background: var(--bg-secondary) !important;
+            border-color: var(--gray-200) !important;
+            color: var(--gray-900);
+        }
+
+        :root:not([data-theme]) .table tbody tr:hover {
+            background: var(--bg-tertiary) !important;
+            border-color: var(--gray-200) !important;
+        }
+
+        :root:not([data-theme]) .table tbody tr * {
+            border-color: var(--gray-200) !important;
+        }
+
+        :root:not([data-theme]) .table tbody td {
+            border-color: var(--gray-200) !important;
+        }
+
+        :root:not([data-theme]) .table tbody td::before {
+            color: var(--gray-600) !important;
+        }
+
+        :root:not([data-theme]) .job-description-preview {
+            color: var(--gray-600) !important;
+            background: var(--bg-tertiary) !important;
+        }
     }
 }
 
@@ -1401,32 +1524,88 @@ p,
         border: none;
         padding: var(--space-2) 0;
         position: relative;
-        border-bottom: 1px solid var(--gray-100);
     }
 
-    .table tbody td:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-        margin-top: var(--space-3);
-    }
-
-    /* Job Details - Make it prominent */
+    /* Job Details - Make it prominent with larger title */
     .table tbody td:nth-child(1) {
         order: -6;
         padding: 0 0 var(--space-3) 0;
-        border-bottom: 2px solid var(--gray-200);
+        border-bottom: 1px solid var(--gray-200);
         margin-bottom: var(--space-3);
     }
 
     .table tbody td:nth-child(1) .fw-semibold {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-xl);
         font-weight: 700;
         line-height: 1.3;
         margin-bottom: var(--space-2);
+        display: block;
     }
 
     .table tbody td:nth-child(1) .text-sm {
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
+    }
+
+    /* Show location - compact format */
+    .table tbody td:nth-child(2) {
+        order: -5;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+    }
+
+    .table tbody td:nth-child(2)::before {
+        content: "📍";
+        font-size: var(--font-size-sm);
+    }
+
+    .table tbody td:nth-child(2) .badge {
+        font-size: var(--font-size-xs);
+        padding: var(--space-1) var(--space-2);
+    }
+
+    /* Show keyword - compact format */
+    .table tbody td:nth-child(3) {
+        order: -4;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+    }
+
+    .table tbody td:nth-child(3)::before {
+        content: "🔍";
+        font-size: var(--font-size-sm);
+    }
+
+    .table tbody td:nth-child(3) .badge {
+        font-size: var(--font-size-xs);
+        padding: var(--space-1) var(--space-2);
+    }
+
+    /* Hide approved date - not critical on mobile */
+    .table tbody td:nth-child(4) {
+        display: none;
+    }
+
+    /* Status - show prominently with icon */
+    .table tbody td:nth-child(5) {
+        order: -3;
+        padding: var(--space-3) 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--space-2);
+    }
+
+    .table tbody td:nth-child(5)::before {
+        content: "Status: ";
+        font-weight: 600;
+        color: var(--gray-900);
+        font-size: var(--font-size-sm);
     }
 
     /* Actions - Keep at bottom and make prominent */
@@ -1435,7 +1614,8 @@ p,
         text-align: center;
         margin-top: var(--space-4);
         padding-top: var(--space-4);
-        border-top: 2px solid var(--gray-200);
+        border-top: 1px solid var(--gray-200);
+        border-bottom: none;
     }
 
     .table tbody td:last-child .btn-group {
@@ -1447,49 +1627,35 @@ p,
 
     .table tbody td:last-child .btn {
         flex: 1;
-        max-width: 120px;
         min-height: 44px;
         font-size: var(--font-size-sm);
+        padding: var(--space-3);
     }
 
-    /* Hide less important columns on small screens */
-    .table tbody td:nth-child(2), /* Location */
-    .table tbody td:nth-child(3), /* Match Criteria */
-    .table tbody td:nth-child(4)  /* Approved Date */
-    {
-        display: none;
+    .table tbody td:last-child .btn i {
+        font-size: var(--font-size-base);
     }
 
-    /* Keep status but make it smaller */
-    .table tbody td:nth-child(5) {
-        order: -1;
-        text-align: center;
-        padding: var(--space-2) 0 var(--space-3) 0;
-    }
-
-    .table tbody td:nth-child(5)::before {
-        content: "Status: ";
-        font-weight: 600;
-        color: var(--gray-700);
+    /* Show job description preview on mobile */
+    .job-description-preview {
+        display: block !important;
+        line-height: 1.5;
+        margin-top: var(--space-2);
+        padding: var(--space-3);
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
         font-size: var(--font-size-sm);
+        color: var(--gray-900);
     }
 }
 
-/* Show more details on slightly larger mobile screens */
-@media (min-width: 480px) and (max-width: 768px) {
-    /* Show location on larger mobile screens */
-    .table tbody td:nth-child(2) {
-        display: block;
-        order: -2;
-        text-align: center;
-        padding: var(--space-1) 0 var(--space-2) 0;
-    }
-
-    .table tbody td:nth-child(2)::before {
-        content: "📍 ";
-        margin-right: var(--space-1);
+/* Hide description preview on desktop */
+@media (min-width: 769px) {
+    .job-description-preview {
+        display: none !important;
     }
 }
+
 
 /* Tablet improvements */
 @media (min-width: 768px) and (max-width: 1024px) {
